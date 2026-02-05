@@ -343,7 +343,7 @@ def survey_page():
                 c1, c2, c3 = st.columns([1, 2, 1])
                 with c2:
                     temp = img.split('?')
-                    img = temp[0] + 'export=download&' + temp[1]
+                    img = temp[0] + '?export=download&' + temp[1]
                     st.image(img, width=350)
                     st.write(img)
 
@@ -365,7 +365,7 @@ def survey_page():
             with c2:
                 img = current_example['image']
                 temp = img.split('?')
-                img = temp[0] + 'export=download&' + temp[1]
+                img = temp[0] + '?export=download&' + temp[1]
                 st.image(img, width=450)
                 st.write(img)
     
