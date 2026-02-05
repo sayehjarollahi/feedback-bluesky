@@ -343,6 +343,7 @@ def survey_page():
                 c1, c2, c3 = st.columns([1, 2, 1])
                 with c2:
                     st.image(img, width=350)
+                    st.write(img)
 
 
             st.markdown("---")
