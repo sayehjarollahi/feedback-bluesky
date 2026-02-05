@@ -151,7 +151,24 @@ def append_to_public_sheet(data, max_retries=3):
     return False, "Max retries exceeded"
 
 
-
+if 'feedback_data' not in st.session_state:
+    st.session_state.feedback_data = []
+if 'session_id' not in st.session_state:
+    st.session_state.session_id = str(uuid.uuid4())[:8]
+if 'current_video_index' not in st.session_state:
+    st.session_state.current_video_index = 0
+if 'videos' not in st.session_state:
+    st.session_state.videos = []
+if 'page' not in st.session_state:
+    st.session_state.page = 'intro'
+if 'prolific_id' not in st.session_state:
+    st.session_state.prolific_id = ''
+if 'consent_given' not in st.session_state:
+    st.session_state.consent_given = False
+if 'video_start_time' not in st.session_state:
+    st.session_state.video_start_time = None
+if 'submission_complete' not in st.session_state:
+    st.session_state.submission_complete = False
 
 def intro_page():
     """Introduction and consent page"""
