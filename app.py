@@ -377,10 +377,11 @@ def survey_page():
             c1, c2, c3 = st.columns([1, 2, 1])
             with c2:
                 img = current_example['image']
-                temp = img.split('?')
-                img = temp[0] + '?export=download&' + temp[1]
+                # temp = img.split('?')
+                # img = temp[0] + '?export=download&' + temp[1]
+                img = show_drive_image(img)
                 st.image(img, width=450)
-                st.write(img)
+                # st.write(img)
     
 
         st.markdown("---")
