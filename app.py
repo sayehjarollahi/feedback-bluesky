@@ -342,6 +342,8 @@ def survey_page():
             if isinstance(img, str) and img.strip() != "":
                 c1, c2, c3 = st.columns([1, 2, 1])
                 with c2:
+                    temp = img.split('?')
+                    img = temp[0] + 'export=download&' + temp[1]
                     st.image(img, width=350)
                     st.write(img)
 
@@ -361,8 +363,11 @@ def survey_page():
         ):
             c1, c2, c3 = st.columns([1, 2, 1])
             with c2:
-                st.image(current_example['image'], width=450)
-                st.write(current_example['image'])
+                img = current_example['image']
+                temp = img.split('?')
+                img = temp[0] + 'export=download&' + temp[1]
+                st.image(img, width=450)
+                st.write(img)
     
 
         st.markdown("---")
