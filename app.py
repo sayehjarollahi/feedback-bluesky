@@ -1,6 +1,8 @@
 import streamlit as st
 import pandas as pd
 import requests
+from PIL import Image
+from io import BytesIO
 from datetime import datetime
 import uuid
 import json
@@ -287,6 +289,16 @@ def intro_page():
             elif not consent:
                 st.error("⚠️ Please provide your informed consent to continue.")
 
+def show_drive_image(url, width=450):
+    try:
+        response = requests.get(url, timeout=10)
+        response.raise_for_status()
+        img = Image.open(BytesIO(response.content))
+        return img
+    except Exception as e:
+        st.error("Failed to load image")
+        st.write(e)
+
 def survey_page():
     """Main survey page with video feedback"""
    
@@ -342,10 +354,11 @@ def survey_page():
             if isinstance(img, str) and img.strip() != "":
                 c1, c2, c3 = st.columns([1, 2, 1])
                 with c2:
-                    temp = img.split('?')
-                    img = temp[0] + '?export=download&' + temp[1]
+                    img = show_drive_image(img)
+                    # temp = img.split('?')
+                    # img = temp[0] + '?export=download&' + temp[1]
                     st.image(img, width=350)
-                    st.write(img)
+                    # st.write(img)
 
 
             st.markdown("---")
