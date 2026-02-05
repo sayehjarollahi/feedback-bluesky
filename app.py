@@ -32,6 +32,20 @@ CATEGORIES = [
     "Lipsync", "Fitness & Health", "Society"
 ]
 
+st.markdown(
+    """
+    <style>
+    .boxed-container {
+        border: 1.5px solid rgba(255, 255, 255, 0.25);
+        border-radius: 12px;
+        padding: 16px;
+        background-color: rgba(255, 255, 255, 0.02);
+    }
+    </style>
+    """,
+    unsafe_allow_html=True
+)
+
 # st.write("Secrets:", st.secrets)
 GOOGLE_APPS_SCRIPT_URL = st.secrets["GOOGLE_APPS_SCRIPT_URL"]
 models = st.secrets["LLM_MODELS"]
@@ -40,10 +54,6 @@ PROLIFIC_COMPLETION_CODE = st.secrets["PROLIFIC_COMPLETION_CODE"]
 # models_str = os.getenv("LLM_MODELS", "")
 # model_idx = int(os.getenv("MODEL_IDX", 0))
 model_idx = int(st.secrets["MODEL_IDX"])
-if isinstance(models, str):
-    models = models.split(",")
-else:
-    st.error("LLM_MODELS should be a comma-separated string in secrets.toml or .env file.")
 
 LLM_MODEL = models[model_idx]
 
@@ -73,6 +83,33 @@ LOAD_RAMDOM = st.secrets["LOAD_RAMDOM"]
 # int(os.getenv("VIDEO_SAMPLE_SIZE", 50))  # Default to 50 if not set
 # LOAD_RAMDOM = os.getenv("LOAD_RAMDOM", "False").lower() == "true"
 
+def load_example_posts(query_csv_path, examples_csv_path):
+    df_query = pd.read_csv(query_csv_path)
+    df_examples = pd.read_csv(examples_csv_path)
+    print(f'len query: {len(df_query)}')
+
+    df_merged = df_query.merge(
+        df_examples,
+        on=["label", "sub_id"],
+        how="left",            
+        validate="many_to_one" 
+    )
+    print(f'len merged: {len(df_merged)}')
+
+    return df_merged
+
+def assign_rows_to_user(df, prolific_id, pages_per_user=5):
+    total_rows = len(df)
+    start_idx = abs(hash(prolific_id)) % total_rows
+    
+    assigned_indices = [
+        (start_idx + i) % total_rows
+        for i in range(pages_per_user)
+    ]
+    
+    temp =  df.iloc[assigned_indices].reset_index(drop=True)
+    temp = df[df["image"].notna() & (df["image"].astype(str).str.strip() != "")].sample(5)
+    return temp
 
 def load_video_data(video_list_file):
     """Load video data from text file and corresponding CSV"""
@@ -122,18 +159,11 @@ def append_to_public_sheet(data, max_retries=3):
         try:
             # Prepare data with consistent column order - make sure this matches your Google Sheet headers
             payload = {
-                'timestamp': data['timestamp'],
                 'prolific_id': data['prolific_id'],
-                'session_id': data['session_id'],
-                'video_name': data['video_name'],
-                'rating': data['rating'],
-                'accuracy': data['accuracy'],
-                'predicted_category': data['predicted_category'],
-                'true_category': data['true_category'],
-                'comments': data['comments'],
-                'llm_model': data['llm_model'],
-                'time_spent': data['time_spent']
+                'example_id': data['example_id'],
+                'answer_yes_no': data['answer_yes_no'],
             }
+
             
             # Send POST request to Google Apps Script with longer timeout
             response = requests.post(
@@ -227,7 +257,7 @@ def intro_page():
     st.markdown("""
     <div style="text-align: center; padding: 15px 0;">
         <div style="font-size: 3em; margin-bottom: 8px;">🎓</div>
-        <h1 style="color: #1f4e79; margin: 0; font-size: 2.2em;">Video Summary Feedback Study</h1>
+        <h1 style="color: #1f4e79; margin: 0; font-size: 2.2em;">Bluesky Content Moderation Study</h1>
         <p style="color: #666; margin: 3px 0; font-size: 1em;">Max Planck Institute for Software Systems • Germany</p>
     </div>
     """, unsafe_allow_html=True)
@@ -239,8 +269,8 @@ def intro_page():
 
     Dear participant,
 
-    This survey aims to understand the efficacy of multimodal language models in summarizing short-format videos. During the survey, you will be properly guided through different sections. We will record your responses given during the survey.
-
+    This survey examines how people judge posts with closely related content and whether content moderation decisions are consistent across similar examples. You will be guided step by step through the survey and asked to make simple judgments.
+                
     This study is being conducted by academic researchers from the Max Planck Institute for Software Systems, Germany. Your valuable opinion expressed in this survey may contribute to important research findings. We request you to read the instructions carefully and answer all questions thoughtfully.
 
     **Privacy & Data Protection:**
@@ -316,18 +346,20 @@ def intro_page():
             st.session_state.consent_given = True
             
             # Load video data
-            video_list_file = "data/required_videos.txt"
-            videos = load_video_data(video_list_file)
+            example_df = load_example_posts("data/posts_to_be_labeled.csv", "data/top_examples_per_subcluster.csv")
+            assigned_rows = assign_rows_to_user(
+                example_df,
+                prolific_id=prolific_id,
+                pages_per_user=5
+            )
+
+            st.session_state.examples = assigned_rows.to_dict("records")
+            st.session_state.page = 'survey'
+            st.session_state.current_video_index = 0
+            st.session_state.video_start_time = time.time()
+            st.rerun()
             
-            if videos:
-                # Randomize video order
-                random.shuffle(videos)
-                st.session_state.videos = videos
-                st.session_state.page = 'survey'
-                st.session_state.video_start_time = time.time()
-                st.rerun()
-            else:
-                st.error("No videos found. Please contact the researchers.")
+            
         else:
             if not prolific_id:
                 st.error("⚠️ Please enter your Prolific ID.")
@@ -338,29 +370,35 @@ def intro_page():
 
 def survey_page():
     """Main survey page with video feedback"""
-    if not st.session_state.videos:
-        st.error("No videos loaded. Please restart the study.")
-        return
+   
     
     current_idx = st.session_state.current_video_index
-    total_videos = len(st.session_state.videos)
+    total_videos = len(st.session_state.examples)
     
     # Progress indicator
     st.progress((current_idx + 1) / total_videos)
-    st.write(f"Video {current_idx + 1} of {total_videos}")
+    st.write(f"Post {current_idx + 1} of {total_videos}")
     
     # Prominent instructions at the top of the page
     st.markdown("""
     <div style="background-color: #e3f2fd; padding: 15px; border-radius: 10px; border-left: 5px solid #2196f3; margin-bottom: 20px;">
         <h3 style="color: #1976d2; margin: 0 0 8px 0; font-size: 1.3em;">📋 Instructions</h3>
         <p style="color: #424242; margin: 0; font-size: 1.1em; font-weight: 500;">
-            Your task is to evaluate the quality of the AI-generated summary on the right for the given short form video. Please follow these steps:
-            Watch the video → Read the AI summary → Rate the summary quality → Categorize the video content → Provide detailed feedback
+            There are 10 posts shown to you with the same label as mentioned below. Read the examples on the left carefully.
+                Then decide if the post which is in the right should be labeled the same. Mark "Yes" or "No". 
         </p>
     </div>
     """, unsafe_allow_html=True)
     
-    current_video = st.session_state.videos[current_idx]
+    current_example = st.session_state.examples[current_idx]
+    st.markdown(f"""
+    <div style="background-color: #e3f2fd; padding: 15px; border-radius: 10px; border-left: 5px solid #2196f3; margin-bottom: 20px;">
+        <p style="color: #424242; margin: 0; font-size: 1.1em; font-weight: 500;">
+            The label assigned to the left posts is "{current_example['label']}"
+        </p>
+    </div>
+    """, unsafe_allow_html=True)
+
     
     # Initialize video start time if not set
     if st.session_state.video_start_time is None:
@@ -370,100 +408,65 @@ def survey_page():
     col1, col2 = st.columns([1.5, 2])
     
     with col1:
-        st.subheader(f"📹 Video {current_idx + 1}")
-        
-        # Video player with increased size
-        if current_video['drive_id']:
-            video_url = get_video_embed_url(current_video['drive_id'])
-            
-            video_html = f"""
-            <div style="border: 2px solid #ddd; border-radius: 10px; overflow: hidden;">
-                <iframe src="{video_url}" 
-                        width="100%" 
-                        height="500" 
-                        frameborder="0" 
-                        allowfullscreen="true"
-                        allow="accelerometer; autoplay; clipboard-write; encrypted-media; gyroscope; picture-in-picture">
-                </iframe>
-            </div>
-            """
-            st.components.v1.html(video_html, height=520)
-        else:
-            st.warning("Video not available")
+        st.subheader(f"🧾 Example Posts ({current_idx + 1}/5)")
+
+        for i in range(1, 11):
+            text = current_example.get(f"text{i}", "")
+            img = current_example.get(f"image{i}", "")
+            text = str(text)
+            if text.strip() == "":
+                continue
+
+            st.markdown(f"**Post {i}:**")
+            st.write(text)
+
+            if isinstance(img, str) and img.strip() != "":
+                c1, c2, c3 = st.columns([1, 2, 1])
+                with c2:
+                    st.image(img, width=350)
+
+
+            st.markdown("---")
     
     with col2:
-        st.subheader("🤖 Video Summary")
-        st.text_area("", value=current_video['summary'], height=200, disabled=True)
-        
-        # Feedback form
-        st.subheader("📝 Your Feedback")
-        st.markdown("**Note:** All fields marked with * are mandatory.")
-        
-        # Form fields outside of st.form for real-time validation
-        st.markdown("📊 **How do you rate the above-written summary of the video?***")
-        rating = st.radio(
-            "Overall quality rating",
-            options=[1, 2, 3, 4, 5],
-            format_func=lambda x: f"{x} - {['Very Poor', 'Poor', 'Fair', 'Good', 'Very Good'][x-1]}",
+
+        st.subheader("❓ Question")
+
+        st.markdown(f"**{current_example['text']}**")
+
+        if (
+            'image' in current_example
+            and isinstance(current_example['image'], str)
+            and current_example['image'].strip() != ""
+        ):
+            c1, c2, c3 = st.columns([1, 2, 1])
+            with c2:
+                st.image(current_example['image'], width=450)
+    
+
+        st.markdown("---")
+
+        answer = st.radio(
+            "Should this item be labeled the same?",
+            options=["Yes", "No"],
             index=None,
             horizontal=True,
-            label_visibility="collapsed",
-            key=f"rating_{current_idx}"
+            key=f"answer_{current_idx}"
         )
         
-        # # Summary Accuracy
-        # st.markdown("🎯 **How accurate is the above-written summary of the video? Please feel free to rewatch the video if you need.***")
-        # accuracy = st.radio(
-        #     "Summary accuracy rating",
-        #     options=[1, 2, 3, 4, 5],
-        #     format_func=lambda x: f"{x} - {['Very Poor', 'Poor', 'Fair', 'Good', 'Very Good'][x-1]}",
-        #     index=None,
-        #     horizontal=True,
-        #     label_visibility="collapsed",
-        #     key=f"accuracy_{current_idx}"
-        # )
+       
 
-        accuracy = None
-
-        # Video Category Selection
-        st.markdown("📂 **Video Category***:")
-        predicted_category = st.selectbox(
-            "What category best describes this video?",
-            options=[""] + CATEGORIES,
-            index=0,
-            help="Select the most appropriate category for this video content",
-            label_visibility="collapsed",
-            key=f"category_{current_idx}"
-        )
-        
-        # Detailed Feedback
-        comments = st.text_area(
-            "💬 **Detailed Feedback***:",
-            placeholder="Briefly explain your rating and summary accuracy scores you provided. What was accurate/inaccurate? What was missing?",
-            height=100,
-            help="This field is mandatory. Please explain your ratings.",
-            key=f"comments_{current_idx}"
-        )
-        
         # Check if all required fields are filled
         all_fields_filled = (
-            rating is not None and 
-            # accuracy is not None and 
-            predicted_category and predicted_category != ""
-            and comments.strip() != ""
+            answer is not None
         )
         
         # Show validation messages in real-time
         if not all_fields_filled:
             missing_fields = []
-            if rating is None:
-                missing_fields.append("Overall rating")
-            if accuracy is None:
-                missing_fields.append("Summary accuracy")
-            if not predicted_category or predicted_category == "":
-                missing_fields.append("Video category")
-            if not comments.strip():
-                missing_fields.append("Detailed feedback")
+            if answer is None:
+                missing_fields.append("Yes/No Decision")
+            
             
             if missing_fields:
                 st.warning(f"⚠️ Please complete: {', '.join(missing_fields)}")
@@ -475,8 +478,8 @@ def survey_page():
             button_text = "✅ Submit & Complete Study"
             button_help = "Submit your feedback and complete the study"
         else:
-            button_text = "➡️ Next Video"
-            button_help = f"Continue to video {current_idx + 2} of {total_videos}"
+            button_text = "➡️ Next Post"
+            button_help = f"Continue to post {current_idx + 2} of {total_videos}"
         
         # Action button
         if st.button(
@@ -493,17 +496,9 @@ def survey_page():
                 
                 # Prepare feedback data with consistent ordering
                 feedback_data = {
-                    'timestamp': datetime.now().strftime("%Y-%m-%d %H:%M:%S"),
                     'prolific_id': st.session_state.prolific_id,
-                    'session_id': st.session_state.session_id,
-                    'video_name': current_video['name'],
-                    'rating': rating,
-                    'accuracy': accuracy,
-                    'predicted_category': predicted_category,
-                    'true_category': current_video['true_category'],
-                    'comments': comments,
-                    'llm_model': LLM_MODEL,
-                    'time_spent': round(time_spent, 2)
+                    'example_id': current_example['query_cid'],
+                    'answer_yes_no': answer
                 }
                 
                 # Add to session state
@@ -568,57 +563,17 @@ def summary_page():
     <div style="text-align: center; padding: 20px 0;">
         <div style="font-size: 4em; margin-bottom: 10px;">🎉</div>
         <h1 style="color: #1f4e79; margin: 0;">Study Complete!</h1>
-        <p style="color: #666; font-size: 1.2em;">Thank you for your participation in the Video Summary Feedback Study</p>
+        <p style="color: #666; font-size: 1.2em;">Thank you for your participation in the Bluesky Content Moderation Study</p>
     </div>
     """, unsafe_allow_html=True)
     
     # Show submission status
     if st.session_state.submission_complete:
-        st.success("✅ Your responses have been successfully submitted!")
-        if st.session_state.feedback_data:
-            st.markdown("### ✅ Next Steps")
-            st.success(
-                f"""
-                Thank you for your responses!  
-                To complete the survey, please enter the following code on the Prolific website:
-
-                **{PROLIFIC_COMPLETION_CODE}**
-                """
-            )
-
-            # Show summary of responses
-            st.subheader("📊 Response Summary")
-            df = pd.DataFrame(st.session_state.feedback_data)
-
-            # Key stats
-            col1, col2, col3 = st.columns(3)
-            with col1:
-                st.metric("Videos Reviewed", len(df))
-            with col2:
-                avg_rating = df['rating'].mean()
-                st.metric("Avg. Rating", f"{avg_rating:.1f}/5")
-            with col3:
-                total_time = df['time_spent'].sum()
-                st.metric("Time Spent", f"{total_time:.0f}s")
-
-            st.markdown("---")
-            
-
-            # Optional details
-            with st.expander("📋 View All Responses"):
-                display_df = df[['video_name', 'rating', 'accuracy', 'predicted_category', 'comments']]
-                st.dataframe(display_df, use_container_width=True)
-
-            # Backup option
-            csv = df.to_csv(index=False)
-            st.download_button(
-                "📥 Download Responses",
-                data=csv,
-                file_name=f"feedback_backup_{st.session_state.prolific_id}_{datetime.now().strftime('%Y%m%d_%H%M%S')}.csv",
-                mime="text/csv"
-            )
+        st.success("✅ Your responses have been successfully submitted! Thank you for your responses!")
+        
+      
     else:
-        st.error("❌ There were issues submitting some responses.")
+        st.error("❌ There were issues submitting some responses. Please try again!")
     
     
 
