@@ -14,7 +14,7 @@ load_dotenv()
 
 # Page config
 st.set_page_config(
-    page_title="Video Summary Feedback Tool",
+    page_title="Bluesky Content Moderation",
     page_icon="🎓",
     layout="wide"
 )
@@ -23,14 +23,7 @@ st.set_page_config(
 # GOOGLE_APPS_SCRIPT_URL = os.getenv("GOOGLE_APPS_SCRIPT_URL")
 
 # Categories for video classification
-CATEGORIES = [
-    "News", "Politics", "Music, Singing, & Dancing", "Comedy", "Sports", 
-    "Film & Animation", "Pets & Animals", "Entertainment & Shows", "Gaming", 
-    "Science & Technology", "Autos & Vehicles", "Education", "Outfit, Style, & Howto", 
-    "Nonprofits & Activism", "Travel & Events", "People & Blogs", "Food", 
-    "Relationship", "Family", "Beauty Care", "Daily Life", "Drama", 
-    "Lipsync", "Fitness & Health", "Society"
-]
+
 
 st.markdown(
     """
@@ -48,40 +41,9 @@ st.markdown(
 
 # st.write("Secrets:", st.secrets)
 GOOGLE_APPS_SCRIPT_URL = st.secrets["GOOGLE_APPS_SCRIPT_URL"]
-models = st.secrets["LLM_MODELS"]
 PROLIFIC_COMPLETION_CODE = st.secrets["PROLIFIC_COMPLETION_CODE"]
 
-# models_str = os.getenv("LLM_MODELS", "")
-# model_idx = int(os.getenv("MODEL_IDX", 0))
-model_idx = int(st.secrets["MODEL_IDX"])
 
-LLM_MODEL = models[model_idx]
-
-
-# # Convert string to list
-# LLM_MODELS = [m.strip() for m in models_str.split(",") if m.strip()]
-# if not LLM_MODELS:
-#     st.error("No LLM models configured. Please check your .env file.")
-#     st.stop()
-# LLM_MODEL = LLM_MODELS[model_idx]
-# print(f"Using LLM Model: {LLM_MODEL}")
-# LLM Model (hardcoded for now)
-# LLM_MODELS = os.getenv("LLM_MODELS", "gemini,internvl,qwenvl").split(",")
-
-csv_path_dict = {
-    "gemini": "gemini.csv",
-    "internvl": "internvl.csv",
-    "qwenvl": "qwenvl.csv"
-}
-file_name = csv_path_dict[LLM_MODEL]
-
-with open("data/video_name_to_id.json", "r") as f:
-    video_name_to_id = json.load(f)
-
-VIDEO_SAMPLE_SIZE = st.secrets["VIDEO_SAMPLE_SIZE"]
-LOAD_RAMDOM = st.secrets["LOAD_RAMDOM"]
-# int(os.getenv("VIDEO_SAMPLE_SIZE", 50))  # Default to 50 if not set
-# LOAD_RAMDOM = os.getenv("LOAD_RAMDOM", "False").lower() == "true"
 
 def load_example_posts(query_csv_path, examples_csv_path):
     df_query = pd.read_csv(query_csv_path)
@@ -111,46 +73,6 @@ def assign_rows_to_user(df, prolific_id, pages_per_user=5):
     temp = df[df["image"].notna() & (df["image"].astype(str).str.strip() != "")].sample(5)
     return temp
 
-def load_video_data(video_list_file):
-    """Load video data from text file and corresponding CSV"""
-    videos = []
-    
-    # Read video list from text file
-    if os.path.exists(video_list_file):
-        with open(video_list_file, 'r') as f:
-            video_names = [line.strip() for line in f if line.strip()]
-    else:
-        st.error(f"Video list file not found: {video_list_file}")
-        return []
-    
-    # Load corresponding CSV file
-    csv_file = f"data/csv/{LLM_MODEL}/{file_name}"
-
-    # Sample video_names for testing
-    if LOAD_RAMDOM:
-        video_names = random.sample(video_names, VIDEO_SAMPLE_SIZE)
-    else:
-        video_names = video_names[:VIDEO_SAMPLE_SIZE]
-    
-    if os.path.exists(csv_file):
-        df = pd.read_csv(csv_file)
-        
-        for video_name in video_names:
-            # Find matching row in CSV
-            matching_row = df[df['video_id'] == int(video_name)]
-            if not matching_row.empty:
-                row = matching_row.iloc[0]
-                videos.append({
-                    "name": video_name,
-                    "drive_id": video_name_to_id[video_name],
-                    "summary": row.get('summary', ''),
-                    "true_category": row.get('category', 'Unknown')
-                })
-    else:
-        st.error(f"CSV file not found: {csv_file}")
-        return []
-    
-    return videos
 
 def append_to_public_sheet(data, max_retries=3):
     """Append data to public Google Sheet using Google Apps Script with retry logic"""
@@ -228,28 +150,8 @@ def append_to_public_sheet(data, max_retries=3):
     
     return False, "Max retries exceeded"
 
-def get_video_embed_url(drive_id):
-    return f"https://drive.google.com/file/d/{drive_id}/preview"
 
-# Initialize session state
-if 'feedback_data' not in st.session_state:
-    st.session_state.feedback_data = []
-if 'session_id' not in st.session_state:
-    st.session_state.session_id = str(uuid.uuid4())[:8]
-if 'current_video_index' not in st.session_state:
-    st.session_state.current_video_index = 0
-if 'videos' not in st.session_state:
-    st.session_state.videos = []
-if 'page' not in st.session_state:
-    st.session_state.page = 'intro'
-if 'prolific_id' not in st.session_state:
-    st.session_state.prolific_id = ''
-if 'consent_given' not in st.session_state:
-    st.session_state.consent_given = False
-if 'video_start_time' not in st.session_state:
-    st.session_state.video_start_time = None
-if 'submission_complete' not in st.session_state:
-    st.session_state.submission_complete = False
+
 
 def intro_page():
     """Introduction and consent page"""
