@@ -421,7 +421,7 @@ def survey_page():
         # Check if all required fields are filled
         all_fields_filled = (
             answer is not None
-            and reason is not None
+            and reason.strip() != ""
         )
         
         # Show validation messages in real-time
