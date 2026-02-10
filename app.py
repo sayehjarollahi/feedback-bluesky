@@ -20,7 +20,7 @@ st.markdown(
     html, body, .stApp, .main, .block-container {
         background-color: rgba(173, 216, 230, 0.08) !important;
     }
-    .stSubheader, 
+    
     h3[data-testid="stSubheader"] {
         color: #000000 !important;
     }
