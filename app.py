@@ -13,7 +13,7 @@ from dotenv import load_dotenv
 
 # Load the .env file
 load_dotenv()
-st.markdown(
+/*st.markdown(
     """
     <style>
     /* ---------------------------
@@ -177,7 +177,7 @@ div[data-testid="stWidgetLabel"] p {
     </style>
     """,
     unsafe_allow_html=True
-)
+)*/
 
 
 
