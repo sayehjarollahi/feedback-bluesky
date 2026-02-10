@@ -15,7 +15,6 @@ from dotenv import load_dotenv
 load_dotenv()
 st.markdown(
     """
-    <div style="color: #000000; font-size: 1rem; line-height: 1.6;">
     <style>
     /* Force light background everywhere */
     html, body, .stApp {
@@ -214,7 +213,7 @@ def intro_page():
     """Introduction and consent page"""
     # Research Study Header with Logo
     st.markdown("""
-    <div style="text-align: center; padding: 15px 0;">
+    <div style="color: #000000; text-align: center; padding: 15px 0;">
         <div style="font-size: 3em; margin-bottom: 8px;">🎓</div>
         <h1 style="color: #1f4e79; margin: 0; font-size: 2.2em;">Bluesky Content Moderation Study</h1>
         <p style="color: #666; margin: 3px 0; font-size: 1em;">Max Planck Institute for Software Systems • Germany</p>
