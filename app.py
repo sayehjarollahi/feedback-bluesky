@@ -273,10 +273,11 @@ def intro_page():
                 
     This study is being conducted by academic researchers from the Max Planck Institute for Software Systems, Germany. Your valuable opinion expressed in this survey may contribute to important research findings. We request you to read the instructions carefully and answer all questions thoughtfully.
     
-    <div style="color: #d32f2f; font-weight: 600; margin-top: 10px;">
+    <div style="color: #d32f2f !important; font-weight: 600; margin-top: 10px;">
     ⚠️ Important: This survey contains examples of content that may include offensive language, hate speech, or other potentially distressing material. 
     Please proceed only if you feel comfortable viewing such content.
     </div>
+    
         
     **Privacy & Data Protection:**
     - Results may be published in research forums, but only in aggregate forms (averages, totals)
