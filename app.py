@@ -176,6 +176,69 @@ st.markdown(
     color: #d32f2f !important;
     font-weight: 600;
     }
+    /* ===============================
+       FIX RADIO BUTTON TEXT COLOR
+    ================================ */
+    
+    /* Radio group label (the question) */
+    div[data-testid="stRadio"] label {
+        color: #000000 !important;
+        font-weight: 600;
+    }
+    
+    /* Radio option text */
+    div[data-testid="stRadio"] div[role="radiogroup"] label span {
+        color: #000000 !important;
+        font-weight: 500;
+    }
+    
+    /* Selected option text (Streamlit pill style) */
+    div[data-testid="stRadio"] div[aria-checked="true"] span {
+        color: #000000 !important;
+    }
+    
+    /* Unselected option text */
+    div[data-testid="stRadio"] div[aria-checked="false"] span {
+        color: #000000 !important;
+    }
+    /* ===============================
+   RADIO BUTTON CIRCLES → WHITE
+================================ */
+
+/* Base radio circle */
+div[data-testid="stRadio"] input[type="radio"] {
+    appearance: none !important;
+    -webkit-appearance: none !important;
+    -moz-appearance: none !important;
+
+    width: 16px;
+    height: 16px;
+
+    border: 2px solid #6b7280 !important;
+    border-radius: 50%;
+    background-color: #ffffff !important;
+
+    display: inline-grid;
+    place-content: center;
+    margin-right: 6px;
+}
+
+/* Selected radio */
+div[data-testid="stRadio"] input[type="radio"]:checked {
+    background-color: #ffffff !important;
+    border-color: #3b82f6 !important;
+}
+
+/* Inner dot */
+div[data-testid="stRadio"] input[type="radio"]:checked::before {
+    content: "";
+    width: 8px;
+    height: 8px;
+    border-radius: 50%;
+    background-color: #3b82f6;
+}
+
+
     </style>
     """,
     unsafe_allow_html=True
@@ -525,7 +588,7 @@ def survey_page():
     col1, col2 = st.columns([1.5, 2])
     
     with col1:
-        st.subheader(f"🧾 Example Posts ({current_idx + 1}/5)")
+        st.subheader(f"🧾 Labeled Posts")
 
         for i in range(1, 11):
             text = current_example.get(f"text{i}", "")
@@ -551,7 +614,7 @@ def survey_page():
     
     with col2:
 
-        st.subheader("❓ Question")
+        st.subheader("❓ Target Post")
 
         st.markdown(f"**{current_example['text']}**")
 
