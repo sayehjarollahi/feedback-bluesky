@@ -101,22 +101,45 @@ st.markdown(
         color: #ffffff !important;
         cursor: not-allowed;
     }
-    div[data-testid="stCheckbox"] input {
-        accent-color: #3b82f6;
+    div[data-testid="stCheckbox"] div {
+    background-color: #ffffff !important;
+    border-radius: 4px;
     }
-
-    /* Streamlit checkmark (SVG PATH) */
+    
+    /* Checkbox square */
+    div[data-testid="stCheckbox"] svg {
+        background-color: #ffffff !important;
+        border-radius: 4px;
+    }
+    
+    /* Checkmark */
     div[data-testid="stCheckbox"] svg path {
-        fill: white !important;
-        stroke: white !important;
+        fill: #ffffff !important;
+        stroke: #ffffff !important;
     }
-
-    /* Checkbox label text */
-    div[data-testid="stCheckbox"] label span {
+    div[data-testid="stCheckbox"] label,
+    div[data-testid="stCheckbox"] label span,
+    div[data-testid="stCheckbox"] p {
         color: #000000 !important;
         font-weight: 500;
     }
-        
+    div[data-testid="stAlert"] {
+    background-color: #fdecea !important;
+    color: #000000 !important;
+    }
+    
+    /* Alert text */
+    div[data-testid="stAlert"] p,
+    div[data-testid="stAlert"] span {
+        color: #000000 !important;
+        font-weight: 500;
+    }
+    
+    /* Alert icon */
+    div[data-testid="stAlert"] svg {
+        fill: #d32f2f !important;
+    }
+            
     
     .content-warning {
     color: #d32f2f !important;
