@@ -289,7 +289,7 @@ def intro_page():
     - You may withdraw at any time without penalty
     - Your responses will remain anonymous
     - You can request data deletion by contacting the researchers
-    """)
+    """,  unsafe_allow_html=True)
     
     st.markdown("---")
     st.markdown("**Note:** All fields marked with * are mandatory.")
