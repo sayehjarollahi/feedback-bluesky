@@ -13,6 +13,33 @@ from dotenv import load_dotenv
 
 # Load the .env file
 load_dotenv()
+st.markdown(
+    """
+    <style>
+    /* Force light background everywhere */
+    html, body, .stApp {
+        background-color: rgba(173, 216, 230, 0.08) !important;
+    }
+
+    /* Main content area */
+    .main {
+        background-color: rgba(173, 216, 230, 0.08) !important;
+    }
+
+    /* Inner page container */
+    .block-container {
+        background-color: rgba(173, 216, 230, 0.08) !important;
+        padding-top: 2rem;
+    }
+
+    /* Optional: fix text color for readability */
+    body {
+        color: #0f172a;
+    }
+    </style>
+    """,
+    unsafe_allow_html=True
+)
 
 # Page config
 st.set_page_config(
