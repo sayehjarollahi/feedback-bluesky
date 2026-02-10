@@ -428,7 +428,9 @@ def survey_page():
         if not all_fields_filled:
             missing_fields = []
             if answer is None:
-                missing_fields.append("Yes/No Decision", "Reason")
+                missing_fields.append("Yes/No Decision")
+            if reason is None:
+                missing_fields.append("Reason")
             
             
             if missing_fields:
