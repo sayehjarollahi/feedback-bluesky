@@ -15,6 +15,7 @@ from dotenv import load_dotenv
 load_dotenv()
 st.markdown(
     """
+    <div style="color: #000000; font-size: 1rem; line-height: 1.6;">
     <style>
     /* Force light background everywhere */
     html, body, .stApp {
