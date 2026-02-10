@@ -13,171 +13,171 @@ from dotenv import load_dotenv
 
 # Load the .env file
 load_dotenv()
-/*st.markdown(
-    """
-    <style>
-    /* ---------------------------
-       FORCE LIGHT THEME COLORS
-    ----------------------------*/
+# st.markdown(
+#     """
+#     <style>
+#     /* ---------------------------
+#        FORCE LIGHT THEME COLORS
+#     ----------------------------*/
 
-    :root {
-        --text-color: #000000;
-        --body-text-color: #000000;
-        --primary-text-color: #000000;
-        --secondary-text-color: #000000;
-        --disabled-text-color: #4b5563;
+#     :root {
+#         --text-color: #000000;
+#         --body-text-color: #000000;
+#         --primary-text-color: #000000;
+#         --secondary-text-color: #000000;
+#         --disabled-text-color: #4b5563;
 
-        --background-color: rgba(173, 216, 230, 0.08);
-        --secondary-background-color: rgba(173, 216, 230, 0.12);
+#         --background-color: rgba(173, 216, 230, 0.08);
+#         --secondary-background-color: rgba(173, 216, 230, 0.12);
 
-        --border-color: #90caf9;
-    }
+#         --border-color: #90caf9;
+#     }
 
-    /* Page background */
-    html, body, .stApp, .main, .block-container {
-        background-color: rgba(173, 216, 230, 0.08) !important;
-        color: #000000 !important;
-    }
+#     /* Page background */
+#     html, body, .stApp, .main, .block-container {
+#         background-color: rgba(173, 216, 230, 0.08) !important;
+#         color: #000000 !important;
+#     }
 
-    /* ---------------------------
-       ALL TEXT (nuclear option)
-    ----------------------------*/
-    .stMarkdown, 
-    .stMarkdown p,
-    .stMarkdown li,
-    .stMarkdown h1,
-    .stMarkdown h2,
-    .stMarkdown h3,
-    div[data-testid="stWidgetLabel"] label,
-    div[data-testid="stCheckbox"] label span {
-        color: #000000 !important;
-    }
+#     /* ---------------------------
+#        ALL TEXT (nuclear option)
+#     ----------------------------*/
+#     .stMarkdown, 
+#     .stMarkdown p,
+#     .stMarkdown li,
+#     .stMarkdown h1,
+#     .stMarkdown h2,
+#     .stMarkdown h3,
+#     div[data-testid="stWidgetLabel"] label,
+#     div[data-testid="stCheckbox"] label span {
+#         color: #000000 !important;
+#     }
 
-    /* ---------------------------
-       INPUT FIELD (Prolific ID)
-    ----------------------------*/
-    input, textarea {
-        background-color: #ffffff !important;
-        color: #0f172a !important;
-        border: 2px solid #90caf9 !important;
-        border-radius: 8px !important;
-    }
+#     /* ---------------------------
+#        INPUT FIELD (Prolific ID)
+#     ----------------------------*/
+#     input, textarea {
+#         background-color: #ffffff !important;
+#         color: #0f172a !important;
+#         border: 2px solid #90caf9 !important;
+#         border-radius: 8px !important;
+#     }
 
-    input::placeholder {
-        color: #6b7280 !important;
-        opacity: 1;
-    }
+#     input::placeholder {
+#         color: #6b7280 !important;
+#         opacity: 1;
+#     }
 
-    /* ---------------------------
-       CHECKBOX
-    ----------------------------*/
-    input[type="checkbox"] {
-        accent-color: #6b7280 !important;
-        background-color: #ffffff !important;
-    }
+#     /* ---------------------------
+#        CHECKBOX
+#     ----------------------------*/
+#     input[type="checkbox"] {
+#         accent-color: #6b7280 !important;
+#         background-color: #ffffff !important;
+#     }
 
-    /* ---------------------------
-       KEEP YOUR BLUE TITLE SAFE
-    ----------------------------*/
-    h1[style*="color"] {
-        all: revert !important;
-    }
-    button[kind="primary"] {
-        background-color: #1f4e79 !important;
-        color: #ffffff !important;
-        border: none !important;
-        font-weight: 600;
-        border-radius: 8px;
-        padding: 0.6rem 1rem;
-    }
+#     /* ---------------------------
+#        KEEP YOUR BLUE TITLE SAFE
+#     ----------------------------*/
+#     h1[style*="color"] {
+#         all: revert !important;
+#     }
+#     button[kind="primary"] {
+#         background-color: #1f4e79 !important;
+#         color: #ffffff !important;
+#         border: none !important;
+#         font-weight: 600;
+#         border-radius: 8px;
+#         padding: 0.6rem 1rem;
+#     }
 
-    button[kind="primary"]:hover {
-        background-color: #163a5c !important;
-        color: #ffffff !important;
-    }
+#     button[kind="primary"]:hover {
+#         background-color: #163a5c !important;
+#         color: #ffffff !important;
+#     }
 
-    button[kind="primary"]:disabled {
-        background-color: #9bb7cf !important;
-        color: #ffffff !important;
-        cursor: not-allowed;
-    }
-    div[data-testid="stCheckbox"] div {
-    background-color: #ffffff !important;
-    border-radius: 4px;
-    }
+#     button[kind="primary"]:disabled {
+#         background-color: #9bb7cf !important;
+#         color: #ffffff !important;
+#         cursor: not-allowed;
+#     }
+#     div[data-testid="stCheckbox"] div {
+#     background-color: #ffffff !important;
+#     border-radius: 4px;
+#     }
     
-    /* Checkbox square */
-    div[data-testid="stCheckbox"] svg {
-        background-color: #ffffff !important;
-        border-radius: 4px;
-    }
+#     /* Checkbox square */
+#     div[data-testid="stCheckbox"] svg {
+#         background-color: #ffffff !important;
+#         border-radius: 4px;
+#     }
     
-    /* Checkmark */
-    div[data-testid="stCheckbox"] svg path {
-        fill: #ffffff !important;
-        stroke: #ffffff !important;
-    }
-    div[data-testid="stCheckbox"] label,
-    div[data-testid="stCheckbox"] label span,
-    div[data-testid="stCheckbox"] p {
-        color: #000000 !important;
-        font-weight: 500;
-    }
-    div[data-testid="stAlert"] {
-    background-color: #fdecea !important;
-    color: #000000 !important;
-    }
+#     /* Checkmark */
+#     div[data-testid="stCheckbox"] svg path {
+#         fill: #ffffff !important;
+#         stroke: #ffffff !important;
+#     }
+#     div[data-testid="stCheckbox"] label,
+#     div[data-testid="stCheckbox"] label span,
+#     div[data-testid="stCheckbox"] p {
+#         color: #000000 !important;
+#         font-weight: 500;
+#     }
+#     div[data-testid="stAlert"] {
+#     background-color: #fdecea !important;
+#     color: #000000 !important;
+#     }
     
-    /* Alert text */
-    div[data-testid="stAlert"] p,
-    div[data-testid="stAlert"] span {
-        color: #000000 !important;
-        font-weight: 500;
-    }
+#     /* Alert text */
+#     div[data-testid="stAlert"] p,
+#     div[data-testid="stAlert"] span {
+#         color: #000000 !important;
+#         font-weight: 500;
+#     }
     
-    /* Alert icon */
-    div[data-testid="stAlert"] svg {
-        fill: #d32f2f !important;
-    }
+#     /* Alert icon */
+#     div[data-testid="stAlert"] svg {
+#         fill: #d32f2f !important;
+#     }
 
             
     
-    .content-warning {
-    color: #d32f2f !important;
-    font-weight: 600;
-    }
-    /* ---------------------------
-    RADIO BUTTON FIX
-----------------------------*/
+#     .content-warning {
+#     color: #d32f2f !important;
+#     font-weight: 600;
+#     }
+#     /* ---------------------------
+#     RADIO BUTTON FIX
+# ----------------------------*/
 
-/* 1. Target the outer circle/container and make it white */
-div[data-testid="stMarkdownContainer"] + div[role="radiogroup"] div[role="radio"] {
-    background-color: white !important;
-    border: 2px solid #6b7280 !important; /* Adding a border so white on white is visible */
-}
+# /* 1. Target the outer circle/container and make it white */
+# div[data-testid="stMarkdownContainer"] + div[role="radiogroup"] div[role="radio"] {
+#     background-color: white !important;
+#     border: 2px solid #6b7280 !important; /* Adding a border so white on white is visible */
+# }
 
-/* 2. Target the inner dot (the selected state) */
-/* This makes the dot blue when selected so it's visible against white */
-div[data-testid="stMarkdownContainer"] + div[role="radiogroup"] div[role="radio"] [data-testid="stSelectionControlActive"] {
-    background-color: #1f4e79 !important;
-}
+# /* 2. Target the inner dot (the selected state) */
+# /* This makes the dot blue when selected so it's visible against white */
+# div[data-testid="stMarkdownContainer"] + div[role="radiogroup"] div[role="radio"] [data-testid="stSelectionControlActive"] {
+#     background-color: #1f4e79 !important;
+# }
 
-/* 3. Force the radio button labels to be black */
-div[data-testid="stMarkdownContainer"] + div[role="radiogroup"] label p {
-    color: #000000 !important;
-    font-weight: 500 !important;
-}
+# /* 3. Force the radio button labels to be black */
+# div[data-testid="stMarkdownContainer"] + div[role="radiogroup"] label p {
+#     color: #000000 !important;
+#     font-weight: 500 !important;
+# }
 
-/* 4. Fix the question text ("Should this item be labeled the same?") */
-div[data-testid="stWidgetLabel"] p {
-    color: #000000 !important;
-    background-color: transparent !important; /* Removes that grey highlight box */
-}
+# /* 4. Fix the question text ("Should this item be labeled the same?") */
+# div[data-testid="stWidgetLabel"] p {
+#     color: #000000 !important;
+#     background-color: transparent !important; /* Removes that grey highlight box */
+# }
 
-    </style>
-    """,
-    unsafe_allow_html=True
-)*/
+#     </style>
+#     """,
+#     unsafe_allow_html=True
+# )
 
 
 
