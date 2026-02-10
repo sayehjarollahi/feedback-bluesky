@@ -94,6 +94,25 @@ st.markdown(
         color: #ffffff !important;
         cursor: not-allowed;
     }
+    div[data-testid="stCheckbox"] input {
+    accent-color: #3b82f6 !important; /* same as input bar */
+    }
+
+    /* Force checked background blue */
+    div[data-testid="stCheckbox"] input:checked {
+        background-color: #3b82f6 !important;
+    }
+    
+    /* Force CHECKMARK (SVG) to be WHITE */
+    div[data-testid="stCheckbox"] svg {
+        fill: #ffffff !important;
+        stroke: #ffffff !important;
+    }
+    
+    /* Prevent global color rule from leaking */
+    div[data-testid="stCheckbox"] * {
+        color: #ffffff !important;
+    }
     .content-warning {
     color: #d32f2f !important;
     font-weight: 600;
