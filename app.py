@@ -140,27 +140,32 @@ st.markdown(
         fill: #d32f2f !important;
     }
     /* ---------------------------
-    REFINED CHECKBOX FIX
-----------------------------*/
-
-    /* Targets the actual box container */
-    div[data-testid="stCheckbox"] [data-testid="stWidgetLabel"] div div {
-        background-color: white !important;
-        border: 1px solid #6b7280 !important; /* Adding a border so white on white is visible */
-    }
+    CLEAN WHITE CHECKBOX FIX
+    ----------------------------*/
     
-    /* Ensure the input itself is transparent or white */
-    div[data-testid="stCheckbox"] input[type="checkbox"] {
-        background-color: white !important;
-        border: 1px solid #6b7280 !important;
-        appearance: checkbox !important; /* Reverting to standard checkbox to avoid the black block */
-        -webkit-appearance: checkbox !important;
-    }
-    
-    /* Optional: If you want to keep your custom "Checkmark" look, 
-       ensure the container background is set: */
+    /* 1. Target the actual box container Streamlit renders */
     div[data-testid="stCheckbox"] div[role="checkbox"] {
-        background-color: white !important;
+        background-color: #ffffff !important;
+        border: 2px solid #6b7280 !important;
+        border-radius: 4px !important;
+    }
+    
+    /* 2. Fix the "hidden" native input that is likely causing the duplicate */
+    div[data-testid="stCheckbox"] input[type="checkbox"] {
+        width: 0 !important;
+        height: 0 !important;
+        position: absolute !important;
+        opacity: 0 !important;
+    }
+    
+    /* 3. Ensure the checkmark color is visible against the white background */
+    div[data-testid="stCheckbox"] svg {
+        fill: #3b82f6 !important; /* This makes the checkmark blue */
+    }
+    
+    /* 4. Remove that extra box on the right created by the ::before pseudo-element */
+    div[data-testid="stCheckbox"] input[type="checkbox"]::before {
+        content: none !important;
     }
     # div[data-testid="stCheckbox"] input[type="checkbox"] {
     # appearance: none !important;
