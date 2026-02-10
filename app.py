@@ -139,36 +139,59 @@ st.markdown(
     div[data-testid="stAlert"] svg {
         fill: #d32f2f !important;
     }
+    /* ---------------------------
+    REFINED CHECKBOX FIX
+----------------------------*/
+
+    /* Targets the actual box container */
+    div[data-testid="stCheckbox"] [data-testid="stWidgetLabel"] div div {
+        background-color: white !important;
+        border: 1px solid #6b7280 !important; /* Adding a border so white on white is visible */
+    }
+    
+    /* Ensure the input itself is transparent or white */
     div[data-testid="stCheckbox"] input[type="checkbox"] {
-    appearance: none !important;
-    -webkit-appearance: none !important;
-    -moz-appearance: none !important;
-
-    width: 18px;
-    height: 18px;
-
-    background-color: #ffffff !important;
-    border: 2px solid #6b7280 !important;
-    border-radius: 4px;
-
-    display: inline-grid;
-    place-content: center;
+        background-color: white !important;
+        border: 1px solid #6b7280 !important;
+        appearance: checkbox !important; /* Reverting to standard checkbox to avoid the black block */
+        -webkit-appearance: checkbox !important;
     }
     
-    /* Checked state */
-    div[data-testid="stCheckbox"] input[type="checkbox"]:checked {
-        background-color: #ffffff !important;
-        border-color: #3b82f6 !important;
+    /* Optional: If you want to keep your custom "Checkmark" look, 
+       ensure the container background is set: */
+    div[data-testid="stCheckbox"] div[role="checkbox"] {
+        background-color: white !important;
     }
+    # div[data-testid="stCheckbox"] input[type="checkbox"] {
+    # appearance: none !important;
+    # -webkit-appearance: none !important;
+    # -moz-appearance: none !important;
+
+    # width: 18px;
+    # height: 18px;
+
+    # background-color: #ffffff !important;
+    # border: 2px solid #6b7280 !important;
+    # border-radius: 4px;
+
+    # display: inline-grid;
+    # place-content: center;
+    # }
     
-    /* Checkmark */
-    div[data-testid="stCheckbox"] input[type="checkbox"]:checked::before {
-        content: "✓";
-        color: #3b82f6;
-        font-size: 14px;
-        font-weight: 700;
-        line-height: 1;
-    }
+    # /* Checked state */
+    # div[data-testid="stCheckbox"] input[type="checkbox"]:checked {
+    #     background-color: #ffffff !important;
+    #     border-color: #3b82f6 !important;
+    # }
+    
+    # /* Checkmark */
+    # div[data-testid="stCheckbox"] input[type="checkbox"]:checked::before {
+    #     content: "✓";
+    #     color: #3b82f6;
+    #     font-size: 14px;
+    #     font-weight: 700;
+    #     line-height: 1;
+    # }
             
     
     .content-warning {
