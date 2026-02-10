@@ -333,7 +333,7 @@ def survey_page():
         <h3 style="color: #1976d2; margin: 0 0 8px 0; font-size: 1.3em;">📋 Instructions</h3>
         <p style="color: #424242; margin: 0; font-size: 1.1em; font-weight: 500;">
             There are 10 posts shown to you with the same label as mentioned below. Read the examples on the left carefully.
-                Then decide if the post which is in the right should be labeled the same. Mark "Yes" or "No". 
+                Then decide if the post which is in the right should be labeled the same. Mark "Yes" or "No". Then give your reason about your response. 
         </p>
     </div>
     """, unsafe_allow_html=True)
@@ -410,19 +410,25 @@ def survey_page():
             horizontal=True,
             key=f"answer_{current_idx}"
         )
-        
+        reason = st.text_area(
+            "Please explain the reason for your answer:",
+            key=f"reason_{current_idx}",
+            placeholder="Write your reasoning here…"
+        )
+                
        
 
         # Check if all required fields are filled
         all_fields_filled = (
             answer is not None
+            and reason.strip() != ""
         )
         
         # Show validation messages in real-time
         if not all_fields_filled:
             missing_fields = []
             if answer is None:
-                missing_fields.append("Yes/No Decision")
+                missing_fields.append("Yes/No Decision", "Reason")
             
             
             if missing_fields:
@@ -455,7 +461,8 @@ def survey_page():
                 feedback_data = {
                     'prolific_id': st.session_state.prolific_id,
                     'example_id': current_example['query_cid'],
-                    'answer_yes_no': answer
+                    'answer_yes_no': answer, 
+                    'reason': reason
                 }
                 
                 # Add to session state
