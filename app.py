@@ -66,6 +66,7 @@ st.markdown(
     ----------------------------*/
     input[type="checkbox"] {
         accent-color: #6b7280 !important;
+        background-color: #ffffff !important;
     }
 
     /* ---------------------------
@@ -271,7 +272,10 @@ def intro_page():
     This survey examines how people judge posts with closely related content and whether content moderation decisions are consistent across similar examples. You will be guided step by step through the survey and asked to make simple judgments.
                 
     This study is being conducted by academic researchers from the Max Planck Institute for Software Systems, Germany. Your valuable opinion expressed in this survey may contribute to important research findings. We request you to read the instructions carefully and answer all questions thoughtfully.
-
+    <span style="color: #d32f2f; font-weight: 600;">
+    ⚠️ Important: This survey contains examples of content that may include offensive language, hate speech, or other potentially distressing material. Please proceed only if you feel comfortable viewing such content.
+    </span>
+        
     **Privacy & Data Protection:**
     - Results may be published in research forums, but only in aggregate forms (averages, totals)
     - No personal information will be published or shared
