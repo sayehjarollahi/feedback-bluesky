@@ -139,30 +139,7 @@ st.markdown(
     div[data-testid="stAlert"] svg {
         fill: #d32f2f !important;
     }
-/* ---------------------------
-    FINAL CHECKBOX CLEANUP
-----------------------------*/
 
-/* 1. Hide the black box on the left by targeting the Base Web div */
-div[data-testid="stCheckbox"] div[role="checkbox"] {
-    background-color: white !important;
-    border: 2px solid #6b7280 !important;
-}
-
-/* 2. Hide the duplicate "ghost" box you created on the right */
-div[data-testid="stCheckbox"] input[type="checkbox"] {
-    display: none !important;
-}
-
-/* 3. Style the checkmark (the SVG icon) */
-div[data-testid="stCheckbox"] svg {
-    fill: #3b82f6 !important; /* Makes the checkmark blue when clicked */
-}
-
-/* 4. Fix the label alignment so it doesn't look squished */
-div[data-testid="stCheckbox"] label {
-    margin-left: 5px !important;
-}
     # div[data-testid="stCheckbox"] input[type="checkbox"] {
     # appearance: none !important;
     # -webkit-appearance: none !important;
