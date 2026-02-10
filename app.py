@@ -40,6 +40,16 @@ st.markdown(
     """,
     unsafe_allow_html=True
 )
+st.markdown(
+    """
+    <style>
+    .stApp {
+        background-color: rgba(173, 216, 230, 0.08);
+    }
+    </style>
+    """,
+    unsafe_allow_html=True
+)
 
 # st.write("Secrets:", st.secrets)
 GOOGLE_APPS_SCRIPT_URL = st.secrets["GOOGLE_APPS_SCRIPT_URL"]
