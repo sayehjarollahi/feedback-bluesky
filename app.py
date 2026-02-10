@@ -97,6 +97,7 @@ def append_to_public_sheet(data, max_retries=3):
                 'prolific_id': data['prolific_id'],
                 'example_id': data['example_id'],
                 'answer_yes_no': data['answer_yes_no'],
+                'reason': data['reason']
             }
 
             
