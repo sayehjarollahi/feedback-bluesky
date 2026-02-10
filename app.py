@@ -34,7 +34,7 @@ st.markdown(
         border: 1.5px solid rgba(255, 255, 255, 0.25);
         border-radius: 12px;
         padding: 16px;
-        background-color: rgba(255, 255, 255, 0.02);
+        background-color: rgba(173, 216, 230, 0.08);
     }
     </style>
     """,
