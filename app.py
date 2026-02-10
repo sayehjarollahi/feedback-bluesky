@@ -94,25 +94,33 @@ st.markdown(
         color: #ffffff !important;
         cursor: not-allowed;
     }
+    /* ===============================
+       CHECKBOX – FINAL CLEAN STYLING
+    ================================*/
+    
+    /* Checkbox box color */
     div[data-testid="stCheckbox"] input {
-    accent-color: #3b82f6 !important; /* same as input bar */
+        accent-color: #3b82f6 !important;  /* same as input bar */
     }
-
-    /* Force checked background blue */
+    
+    /* Checked background */
     div[data-testid="stCheckbox"] input:checked {
         background-color: #3b82f6 !important;
     }
     
-    /* Force CHECKMARK (SVG) to be WHITE */
+    /* Checkbox checkmark (SVG only) */
     div[data-testid="stCheckbox"] svg {
         fill: #ffffff !important;
         stroke: #ffffff !important;
     }
     
-    /* Prevent global color rule from leaking */
-    div[data-testid="stCheckbox"] * {
-        color: #ffffff !important;
+    /* Checkbox LABEL TEXT (force black) */
+    div[data-testid="stCheckbox"] label span {
+        color: #000000 !important;
+        font-weight: 500;
     }
+        
+    
     .content-warning {
     color: #d32f2f !important;
     font-weight: 600;
