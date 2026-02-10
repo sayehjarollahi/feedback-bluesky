@@ -411,7 +411,7 @@ def survey_page():
             key=f"answer_{current_idx}"
         )
         reason = st.text_area(
-            "Please explain the reason for your answer:",
+            "Please explain the reason for your answer, after that press ⌘+Enter/Ctrl+Enter:",
             key=f"reason_{current_idx}",
             placeholder="Write your reasoning here…"
         )
