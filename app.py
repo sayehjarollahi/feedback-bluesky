@@ -27,7 +27,11 @@ st.set_page_config(
 
 # Categories for video classification
 
-
+def on_reason_change():
+    st.session_state.reason_filled = (
+        st.session_state[f"reason_{current_idx}"].strip() != ""
+    )
+    
 st.markdown(
     """
     <style>
@@ -413,6 +417,7 @@ def survey_page():
         reason = st.text_area(
             "Please explain the reason for your answer:",
             key=f"reason_{current_idx}",
+            on_change=on_reason_change,
             placeholder="Write your reasoning here…"
         )
                 
@@ -421,7 +426,7 @@ def survey_page():
         # Check if all required fields are filled
         all_fields_filled = (
             answer is not None
-            and reason.strip() != ""
+            and st.session_state.get("reason_filled", False)
         )
         
         # Show validation messages in real-time
