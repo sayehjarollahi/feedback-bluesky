@@ -146,6 +146,33 @@ st.markdown(
     color: #d32f2f !important;
     font-weight: 600;
     }
+    /* ---------------------------
+    RADIO BUTTON FIX
+----------------------------*/
+
+/* 1. Target the outer circle/container and make it white */
+div[data-testid="stMarkdownContainer"] + div[role="radiogroup"] div[role="radio"] {
+    background-color: white !important;
+    border: 2px solid #6b7280 !important; /* Adding a border so white on white is visible */
+}
+
+/* 2. Target the inner dot (the selected state) */
+/* This makes the dot blue when selected so it's visible against white */
+div[data-testid="stMarkdownContainer"] + div[role="radiogroup"] div[role="radio"] [data-testid="stSelectionControlActive"] {
+    background-color: #1f4e79 !important;
+}
+
+/* 3. Force the radio button labels to be black */
+div[data-testid="stMarkdownContainer"] + div[role="radiogroup"] label p {
+    color: #000000 !important;
+    font-weight: 500 !important;
+}
+
+/* 4. Fix the question text ("Should this item be labeled the same?") */
+div[data-testid="stWidgetLabel"] p {
+    color: #000000 !important;
+    background-color: transparent !important; /* Removes that grey highlight box */
+}
 
     </style>
     """,
