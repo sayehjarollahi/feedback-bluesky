@@ -147,72 +147,16 @@ st.markdown(
     font-weight: 600;
     }
     /* ===============================
-       FIX RADIO BUTTON TEXT COLOR
-    ================================ */
-    
-    /* Radio group label (the question) */
-    div[data-testid="stRadio"] label {
-        color: #000000 !important;
-        font-weight: 600;
-    }
-    
-    /* Radio option text */
-    div[data-testid="stRadio"] div[role="radiogroup"] label span {
-        color: #000000 !important;
-        font-weight: 500;
-    }
-    
-    /* Selected option text (Streamlit pill style) */
-    div[data-testid="stRadio"] div[aria-checked="true"] span {
-        color: #000000 !important;
-    }
-    
-    /* Unselected option text */
-    div[data-testid="stRadio"] div[aria-checked="false"] span {
-        color: #000000 !important;
-    }
-    /* ===============================
-   RADIO BUTTON CIRCLES → WHITE
+   STREAMLIT RADIO — FINAL FIX
 ================================ */
 
-/* Base radio circle */
-div[data-testid="stRadio"] input[type="radio"] {
-    appearance: none !important;
-    -webkit-appearance: none !important;
-    -moz-appearance: none !important;
-
-    width: 16px;
-    height: 16px;
-
-    border: 2px solid #6b7280 !important;
-    border-radius: 50%;
-    background-color: #ffffff !important;
-
-    display: inline-grid;
-    place-content: center;
-    margin-right: 6px;
+/* Question text */
+div[data-testid="stRadio"] > label {
+    color: #000000 !important;
+    font-weight: 600;
 }
 
-/* Selected radio */
-div[data-testid="stRadio"] input[type="radio"]:checked {
-    background-color: #ffffff !important;
-    border-color: #3b82f6 !important;
-}
-
-/* Inner dot */
-div[data-testid="stRadio"] input[type="radio"]:checked::before {
-    content: "";
-    width: 8px;
-    height: 8px;
-    border-radius: 50%;
-    background-color: #3b82f6;
-}
-
- /* =====================================
-   STREAMLIT RADIO — FORCE COLORS
-===================================== */
-
-/* Radio option container */
+/* Option label wrapper */
 div[data-testid="stRadio"] label {
     color: #000000 !important;
 }
@@ -223,20 +167,21 @@ div[data-testid="stRadio"] label span {
     font-weight: 500;
 }
 
-/* The visible radio circle */
+/* Streamlit radio circle */
 div[data-testid="stRadio"] label div:first-child {
     background-color: #ffffff !important;
     border: 2px solid #6b7280 !important;
     border-radius: 50%;
+    width: 16px;
+    height: 16px;
 }
 
-/* Selected radio circle */
+/* Selected circle */
 div[data-testid="stRadio"] label:has(input:checked) div:first-child {
-    background-color: #ffffff !important;
     border-color: #3b82f6 !important;
 }
 
-/* Inner dot when selected */
+/* Inner dot */
 div[data-testid="stRadio"] label:has(input:checked) div:first-child::after {
     content: "";
     width: 8px;
