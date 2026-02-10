@@ -140,36 +140,6 @@ st.markdown(
         fill: #d32f2f !important;
     }
 
-    # div[data-testid="stCheckbox"] input[type="checkbox"] {
-    # appearance: none !important;
-    # -webkit-appearance: none !important;
-    # -moz-appearance: none !important;
-
-    # width: 18px;
-    # height: 18px;
-
-    # background-color: #ffffff !important;
-    # border: 2px solid #6b7280 !important;
-    # border-radius: 4px;
-
-    # display: inline-grid;
-    # place-content: center;
-    # }
-    
-    # /* Checked state */
-    # div[data-testid="stCheckbox"] input[type="checkbox"]:checked {
-    #     background-color: #ffffff !important;
-    #     border-color: #3b82f6 !important;
-    # }
-    
-    # /* Checkmark */
-    # div[data-testid="stCheckbox"] input[type="checkbox"]:checked::before {
-    #     content: "✓";
-    #     color: #3b82f6;
-    #     font-size: 14px;
-    #     font-weight: 700;
-    #     line-height: 1;
-    # }
             
     
     .content-warning {
@@ -237,6 +207,46 @@ div[data-testid="stRadio"] input[type="radio"]:checked::before {
     border-radius: 50%;
     background-color: #3b82f6;
 }
+
+ /* =====================================
+   STREAMLIT RADIO — FORCE COLORS
+===================================== */
+
+/* Radio option container */
+div[data-testid="stRadio"] label {
+    color: #000000 !important;
+}
+
+/* Yes / No text */
+div[data-testid="stRadio"] label span {
+    color: #000000 !important;
+    font-weight: 500;
+}
+
+/* The visible radio circle */
+div[data-testid="stRadio"] label div:first-child {
+    background-color: #ffffff !important;
+    border: 2px solid #6b7280 !important;
+    border-radius: 50%;
+}
+
+/* Selected radio circle */
+div[data-testid="stRadio"] label:has(input:checked) div:first-child {
+    background-color: #ffffff !important;
+    border-color: #3b82f6 !important;
+}
+
+/* Inner dot when selected */
+div[data-testid="stRadio"] label:has(input:checked) div:first-child::after {
+    content: "";
+    width: 8px;
+    height: 8px;
+    background-color: #3b82f6;
+    border-radius: 50%;
+    display: block;
+    margin: auto;
+}
+
 
 
     </style>
