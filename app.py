@@ -16,30 +16,36 @@ load_dotenv()
 st.markdown(
     """
     <style>
-    /* Force light background everywhere */
-    html, body, .stApp {
+    /* Background */
+    html, body, .stApp, .main, .block-container {
         background-color: rgba(173, 216, 230, 0.08) !important;
     }
 
-    /* Main content area */
-    .main {
-        background-color: rgba(173, 216, 230, 0.08) !important;
+    /* ONLY Streamlit markdown text (fix white text) */
+    .stMarkdown p,
+    .stMarkdown li {
+        color: #000000 !important;
     }
 
-    /* Inner page container */
-    .block-container {
-        background-color: rgba(173, 216, 230, 0.08) !important;
-        padding-top: 2rem;
+    /* Markdown headings (like "Welcome to Our Research Study") */
+    .stMarkdown h3 {
+        color: #000000 !important;
     }
 
-    /* Optional: fix text color for readability */
-    body {
-        color: #0f172a;
+    /* Do NOT touch custom HTML headers */
+    h1, h2 {
+        all: unset;
+    }
+
+    /* Optional: horizontal rule */
+    hr {
+        border-color: rgba(0, 0, 0, 0.15);
     }
     </style>
     """,
     unsafe_allow_html=True
 )
+
 
 # Page config
 st.set_page_config(
