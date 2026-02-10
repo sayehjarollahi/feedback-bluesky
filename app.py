@@ -16,77 +16,69 @@ load_dotenv()
 st.markdown(
     """
     <style>
-    /* ----------------------------
-       PAGE BACKGROUND
-    -----------------------------*/
+    /* ---------------------------
+       FORCE LIGHT THEME COLORS
+    ----------------------------*/
+
+    :root {
+        --text-color: #000000;
+        --body-text-color: #000000;
+        --primary-text-color: #000000;
+        --secondary-text-color: #000000;
+        --disabled-text-color: #4b5563;
+
+        --background-color: rgba(173, 216, 230, 0.08);
+        --secondary-background-color: rgba(173, 216, 230, 0.12);
+
+        --border-color: #90caf9;
+    }
+
+    /* Page background */
     html, body, .stApp, .main, .block-container {
         background-color: rgba(173, 216, 230, 0.08) !important;
-    }
-
-    /* ----------------------------
-       ALL TEXT → BLACK
-    -----------------------------*/
-    body, p, span, label, li {
         color: #000000 !important;
     }
 
-    /* Markdown text */
-    .stMarkdown p,
-    .stMarkdown li,
-    .stMarkdown h3 {
+    /* ---------------------------
+       ALL TEXT (nuclear option)
+    ----------------------------*/
+    * {
         color: #000000 !important;
     }
 
-    /* Subheaders (st.subheader) */
-    h3[data-testid="stSubheader"] {
-        color: #000000 !important;
-        font-weight: 600;
-    }
-
-    /* Widget labels (text_input, checkbox, etc.) */
-    div[data-testid="stWidgetLabel"] label {
-        color: #000000 !important;
-        font-weight: 500;
-    }
-
-    /* ----------------------------
+    /* ---------------------------
        INPUT FIELD (Prolific ID)
-    -----------------------------*/
-    input[type="text"] {
+    ----------------------------*/
+    input, textarea {
         background-color: #ffffff !important;
         color: #0f172a !important;
-        border: 1.5px solid #90caf9 !important;
-        border-radius: 8px;
+        border: 2px solid #90caf9 !important;
+        border-radius: 8px !important;
     }
 
-    /* Placeholder text */
     input::placeholder {
         color: #6b7280 !important;
         opacity: 1;
     }
 
-    /* ----------------------------
+    /* ---------------------------
        CHECKBOX
-    -----------------------------*/
+    ----------------------------*/
     input[type="checkbox"] {
-        accent-color: #1f4e79; /* MPI-style blue */
+        accent-color: #6b7280 !important;
     }
 
-    /* Checkbox label text */
-    .stCheckbox label span {
-        color: #000000 !important;
-    }
-
-    /* ----------------------------
-       HR line
-    -----------------------------*/
-    hr {
-        border-color: rgba(0, 0, 0, 0.15);
+    /* ---------------------------
+       KEEP YOUR BLUE TITLE SAFE
+    ----------------------------*/
+    h1[style*="color"] {
+        all: revert !important;
     }
     </style>
     """,
     unsafe_allow_html=True
 )
+
 
 
 
