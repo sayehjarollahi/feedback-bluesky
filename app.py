@@ -147,42 +147,47 @@ st.markdown(
     font-weight: 600;
     }
     /* ===============================
-   STREAMLIT RADIO — FINAL FIX
+   STREAMLIT RADIO — CLEAN FIX
 ================================ */
 
-/* Question text */
+/* --- Question text ONLY --- */
 div[data-testid="stRadio"] > label {
     color: #000000 !important;
     font-weight: 600;
+    display: block;
+    white-space: normal;
 }
 
-/* Option label wrapper */
-div[data-testid="stRadio"] label {
-    color: #000000 !important;
+/* --- Option container ONLY --- */
+div[data-testid="stRadio"] div[role="radiogroup"] label {
+    display: flex;
+    align-items: center;
+    gap: 8px;
 }
 
 /* Yes / No text */
-div[data-testid="stRadio"] label span {
+div[data-testid="stRadio"] div[role="radiogroup"] label span {
     color: #000000 !important;
     font-weight: 500;
 }
 
-/* Streamlit radio circle */
-div[data-testid="stRadio"] label div:first-child {
-    background-color: #ffffff !important;
-    border: 2px solid #6b7280 !important;
-    border-radius: 50%;
+/* Radio circle */
+div[data-testid="stRadio"] div[role="radiogroup"] label div:first-child {
     width: 16px;
     height: 16px;
+    border-radius: 50%;
+    background-color: #ffffff !important;
+    border: 2px solid #6b7280 !important;
+    flex-shrink: 0;
 }
 
-/* Selected circle */
-div[data-testid="stRadio"] label:has(input:checked) div:first-child {
+/* Selected */
+div[data-testid="stRadio"] div[role="radiogroup"] label:has(input:checked) div:first-child {
     border-color: #3b82f6 !important;
 }
 
 /* Inner dot */
-div[data-testid="stRadio"] label:has(input:checked) div:first-child::after {
+div[data-testid="stRadio"] div[role="radiogroup"] label:has(input:checked) div:first-child::after {
     content: "";
     width: 8px;
     height: 8px;
@@ -191,7 +196,6 @@ div[data-testid="stRadio"] label:has(input:checked) div:first-child::after {
     display: block;
     margin: auto;
 }
-
 
 
     </style>
