@@ -75,6 +75,25 @@ st.markdown(
     h1[style*="color"] {
         all: revert !important;
     }
+    button[kind="primary"] {
+        background-color: #1f4e79 !important;
+        color: #ffffff !important;
+        border: none !important;
+        font-weight: 600;
+        border-radius: 8px;
+        padding: 0.6rem 1rem;
+    }
+
+    button[kind="primary"]:hover {
+        background-color: #163a5c !important;
+        color: #ffffff !important;
+    }
+
+    button[kind="primary"]:disabled {
+        background-color: #9bb7cf !important;
+        color: #ffffff !important;
+        cursor: not-allowed;
+    }
     .content-warning {
     color: #d32f2f !important;
     font-weight: 600;
