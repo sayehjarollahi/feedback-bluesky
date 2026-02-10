@@ -42,7 +42,14 @@ st.markdown(
     /* ---------------------------
        ALL TEXT (nuclear option)
     ----------------------------*/
-    * {
+    .stMarkdown, 
+    .stMarkdown p,
+    .stMarkdown li,
+    .stMarkdown h1,
+    .stMarkdown h2,
+    .stMarkdown h3,
+    div[data-testid="stWidgetLabel"] label,
+    div[data-testid="stCheckbox"] label span {
         color: #000000 !important;
     }
 
