@@ -16,32 +16,70 @@ load_dotenv()
 st.markdown(
     """
     <style>
-    /* Background */
+    /* ----------------------------
+       PAGE BACKGROUND
+    -----------------------------*/
     html, body, .stApp, .main, .block-container {
         background-color: rgba(173, 216, 230, 0.08) !important;
     }
-    
-    h3[data-testid="stSubheader"] {
+
+    /* ----------------------------
+       ALL TEXT → BLACK
+    -----------------------------*/
+    body, p, span, label, li {
         color: #000000 !important;
     }
 
-    /* ONLY Streamlit markdown text (fix white text) */
+    /* Markdown text */
     .stMarkdown p,
-    .stMarkdown li {
-        color: #000000 !important;
-    }
-
-    /* Markdown headings (like "Welcome to Our Research Study") */
+    .stMarkdown li,
     .stMarkdown h3 {
         color: #000000 !important;
     }
 
-    /* Do NOT touch custom HTML headers */
-    h1, h2 {
-        all: unset;
+    /* Subheaders (st.subheader) */
+    h3[data-testid="stSubheader"] {
+        color: #000000 !important;
+        font-weight: 600;
     }
 
-    /* Optional: horizontal rule */
+    /* Widget labels (text_input, checkbox, etc.) */
+    div[data-testid="stWidgetLabel"] label {
+        color: #000000 !important;
+        font-weight: 500;
+    }
+
+    /* ----------------------------
+       INPUT FIELD (Prolific ID)
+    -----------------------------*/
+    input[type="text"] {
+        background-color: #ffffff !important;
+        color: #0f172a !important;
+        border: 1.5px solid #90caf9 !important;
+        border-radius: 8px;
+    }
+
+    /* Placeholder text */
+    input::placeholder {
+        color: #6b7280 !important;
+        opacity: 1;
+    }
+
+    /* ----------------------------
+       CHECKBOX
+    -----------------------------*/
+    input[type="checkbox"] {
+        accent-color: #1f4e79; /* MPI-style blue */
+    }
+
+    /* Checkbox label text */
+    .stCheckbox label span {
+        color: #000000 !important;
+    }
+
+    /* ----------------------------
+       HR line
+    -----------------------------*/
     hr {
         border-color: rgba(0, 0, 0, 0.15);
     }
@@ -49,6 +87,7 @@ st.markdown(
     """,
     unsafe_allow_html=True
 )
+
 
 
 # Page config
