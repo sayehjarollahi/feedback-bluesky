@@ -542,7 +542,29 @@ def summary_page():
     else:
         st.error("❌ There were issues submitting some responses. Please try again!")
     
-    
+    if st.button("🔁 More Samples", type="primary", use_container_width=True):
+        # Reload dataset
+        example_df = load_example_posts(
+            "data/posts_to_be_labeled.csv",
+            "data/top_examples_per_subcluster.csv"
+        )
+
+        # Assign NEW random rows
+        assigned_rows = assign_rows_to_user(
+            example_df,
+            prolific_id=st.session_state.prolific_id,
+            pages_per_user=5
+        )
+
+        # Reset survey-related session state
+        st.session_state.examples = assigned_rows.to_dict("records")
+        st.session_state.current_video_index = 0
+        st.session_state.video_start_time = time.time()
+        st.session_state.feedback_data = []
+        st.session_state.submission_complete = False
+        st.session_state.page = "survey"
+
+        st.rerun()
 
     
     
