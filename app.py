@@ -1,649 +1,479 @@
 import streamlit as st
 import pandas as pd
 import requests
-from datetime import datetime
-import uuid
-import json
+from PIL import Image
+from io import BytesIO
 import time
-import os
-import random
+import json
 from dotenv import load_dotenv
 
-# Load the .env file
 load_dotenv()
 
-# Page config
 st.set_page_config(
-    page_title="Video Summary Feedback Tool",
-    page_icon="🎓",
-    layout="wide"
+    page_title="Bluesky Moderation Study", page_icon="🔵", layout="centered"
 )
 
-# Your Google Apps Script Web App URL
-# GOOGLE_APPS_SCRIPT_URL = os.getenv("GOOGLE_APPS_SCRIPT_URL")
+# ── Styling ────────────────────────────────────────────────────────────────────
 
-# Categories for video classification
-CATEGORIES = [
-    "News", "Politics", "Music, Singing, & Dancing", "Comedy", "Sports", 
-    "Film & Animation", "Pets & Animals", "Entertainment & Shows", "Gaming", 
-    "Science & Technology", "Autos & Vehicles", "Education", "Outfit, Style, & Howto", 
-    "Nonprofits & Activism", "Travel & Events", "People & Blogs", "Food", 
-    "Relationship", "Family", "Beauty Care", "Daily Life", "Drama", 
-    "Lipsync", "Fitness & Health", "Society"
-]
-
-# st.write("Secrets:", st.secrets)
-GOOGLE_APPS_SCRIPT_URL = st.secrets["GOOGLE_APPS_SCRIPT_URL"]
-models = st.secrets["LLM_MODELS"]
-PROLIFIC_COMPLETION_CODE = st.secrets["PROLIFIC_COMPLETION_CODE"]
-
-# models_str = os.getenv("LLM_MODELS", "")
-# model_idx = int(os.getenv("MODEL_IDX", 0))
-model_idx = int(st.secrets["MODEL_IDX"])
-if isinstance(models, str):
-    models = models.split(",")
-else:
-    st.error("LLM_MODELS should be a comma-separated string in secrets.toml or .env file.")
-
-LLM_MODEL = models[model_idx]
-
-
-# # Convert string to list
-# LLM_MODELS = [m.strip() for m in models_str.split(",") if m.strip()]
-# if not LLM_MODELS:
-#     st.error("No LLM models configured. Please check your .env file.")
-#     st.stop()
-# LLM_MODEL = LLM_MODELS[model_idx]
-# print(f"Using LLM Model: {LLM_MODEL}")
-# LLM Model (hardcoded for now)
-# LLM_MODELS = os.getenv("LLM_MODELS", "gemini,internvl,qwenvl").split(",")
-
-csv_path_dict = {
-    "gemini": "gemini.csv",
-    "internvl": "internvl.csv",
-    "qwenvl": "qwenvl.csv"
+st.markdown(
+    """
+<style>
+@import url('https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700&display=swap');
+html, body, [class*="css"] { font-family: 'Inter', sans-serif; }
+.block-container { padding-top: 2rem; }
+.post-card {
+    background: #ffffff;
+    border: 1px solid #e2e8f0;
+    border-radius: 14px;
+    padding: 18px 20px;
+    margin-bottom: 8px;
+    box-shadow: 0 1px 3px rgba(0,0,0,0.06);
 }
-file_name = csv_path_dict[LLM_MODEL]
+.post-avatar {
+    width: 38px; height: 38px; border-radius: 50%;
+    background: linear-gradient(135deg, #0ea5e9, #2563eb);
+    display: inline-block; vertical-align: middle; margin-right: 10px;
+}
+.post-text { font-size: 15px; line-height: 1.65; color: #0f172a; }
+.progress-label { font-size: 13px; color: #64748b; margin-bottom: 6px; }
+.cat-table { width: 100%; border-collapse: collapse; margin: 12px 0 20px; }
+.cat-table th { background: #1e40af; color: white; padding: 10px 14px; text-align: left; font-size: 13px; }
+.cat-table td { padding: 10px 14px; border-bottom: 1px solid #f1f5f9; font-size: 13px; vertical-align: top; line-height: 1.6; }
+.cat-table tr:nth-child(even) td { background: #f8fafc; }
+.cat-label { font-weight: 600; color: #1e293b; white-space: nowrap; }
+</style>
+""",
+    unsafe_allow_html=True,
+)
 
-with open("data/video_name_to_id.json", "r") as f:
-    video_name_to_id = json.load(f)
+# ── Config ─────────────────────────────────────────────────────────────────────
 
-VIDEO_SAMPLE_SIZE = st.secrets["VIDEO_SAMPLE_SIZE"]
-LOAD_RAMDOM = st.secrets["LOAD_RAMDOM"]
-# int(os.getenv("VIDEO_SAMPLE_SIZE", 50))  # Default to 50 if not set
-# LOAD_RAMDOM = os.getenv("LOAD_RAMDOM", "False").lower() == "true"
+GOOGLE_APPS_SCRIPT_URL = st.secrets["GOOGLE_APPS_SCRIPT_URL"]
+# Optional GET endpoint to read back saved rows for resume.
+# If not set in secrets, resume is silently disabled.
+GOOGLE_SHEET_READ_URL = st.secrets.get("GOOGLE_SHEET_READ_URL", "")
+AUTOSAVE_EVERY = 10
+
+# ── Session state ──────────────────────────────────────────────────────────────
+
+for k, v in {
+    "page": "intro",
+    "annotator_name": "",
+    "posts": [],
+    "current_idx": 0,
+    "feedback_data": [],  # all rows collected this session
+    "saved_up_to": -1,  # highest display_num already written to sheet
+    "submission_complete": False,
+    "post_start_time": None,
+    "resume_checked": False,
+    "resumed_from": None,
+    "_saved_rows_cache": [],
+}.items():
+    if k not in st.session_state:
+        st.session_state[k] = v
+
+# ── Helpers ────────────────────────────────────────────────────────────────────
 
 
-def load_video_data(video_list_file):
-    """Load video data from text file and corresponding CSV"""
-    videos = []
-    
-    # Read video list from text file
-    if os.path.exists(video_list_file):
-        with open(video_list_file, 'r') as f:
-            video_names = [line.strip() for line in f if line.strip()]
-    else:
-        st.error(f"Video list file not found: {video_list_file}")
-        return []
-    
-    # Load corresponding CSV file
-    csv_file = f"data/csv/{LLM_MODEL}/{file_name}"
+@st.cache_data
+def load_posts(csv_path="data/survey_posts.csv"):
+    df = pd.read_csv(csv_path)
+    if "display_num" in df.columns:
+        df = df.sort_values("display_num").reset_index(drop=True)
+    return df.to_dict("records")
 
-    # Sample video_names for testing
-    if LOAD_RAMDOM:
-        video_names = random.sample(video_names, VIDEO_SAMPLE_SIZE)
-    else:
-        video_names = video_names[:VIDEO_SAMPLE_SIZE]
-    
-    if os.path.exists(csv_file):
-        df = pd.read_csv(csv_file)
-        
-        for video_name in video_names:
-            # Find matching row in CSV
-            matching_row = df[df['video_id'] == int(video_name)]
-            if not matching_row.empty:
-                row = matching_row.iloc[0]
-                videos.append({
-                    "name": video_name,
-                    "drive_id": video_name_to_id[video_name],
-                    "summary": row.get('summary', ''),
-                    "true_category": row.get('category', 'Unknown')
-                })
-    else:
-        st.error(f"CSV file not found: {csv_file}")
-        return []
-    
-    return videos
 
-def append_to_public_sheet(data, max_retries=3):
-    """Append data to public Google Sheet using Google Apps Script with retry logic"""
-    
+def show_image(url):
+    try:
+        r = requests.get(url, timeout=10)
+        r.raise_for_status()
+        return Image.open(BytesIO(r.content))
+    except Exception:
+        return None
+
+
+def append_to_sheet(data, max_retries=3):
+    """POST a single labeling row to Google Sheets via Apps Script."""
+    payload = {
+        "annotator_name": data["annotator_name"],
+        "post_id": data["post_id"],
+        "display_num": data["display_num"],
+        "label": data["label"],
+        "reason": data["reason"],
+        "time_spent_sec": data["time_spent_sec"],
+    }
     for attempt in range(max_retries):
         try:
-            # Prepare data with consistent column order - make sure this matches your Google Sheet headers
-            payload = {
-                'timestamp': data['timestamp'],
-                'prolific_id': data['prolific_id'],
-                'session_id': data['session_id'],
-                'video_name': data['video_name'],
-                'rating': data['rating'],
-                'accuracy': data['accuracy'],
-                'predicted_category': data['predicted_category'],
-                'true_category': data['true_category'],
-                'comments': data['comments'],
-                'llm_model': data['llm_model'],
-                'time_spent': data['time_spent']
-            }
-            
-            # Send POST request to Google Apps Script with longer timeout
-            response = requests.post(
+            resp = requests.post(
                 GOOGLE_APPS_SCRIPT_URL,
                 json=payload,
-                headers={
-                    'Content-Type': 'application/json',
-                    'User-Agent': 'StreamlitApp/1.0'
-                },
+                headers={"Content-Type": "application/json"},
                 timeout=30,
-                verify=True
             )
-            
-            # Check response
-            if response.status_code == 200:
+            if resp.status_code == 200:
                 try:
-                    result = response.json()
-                    if result.get('status') == 'success':
-                        return True, "Success"
-                    else:
-                        error_msg = result.get('message', 'Unknown error from Google Apps Script')
-                        return False, f"Script error: {error_msg}"
+                    result = resp.json()
+                    if result.get("status") == "success":
+                        return True, "OK"
+                    return False, result.get("message", "Unknown error")
                 except json.JSONDecodeError:
-                    if "success" in response.text.lower():
-                        return True, "Success (HTML response)"
-                    else:
-                        return False, f"Invalid JSON response: {response.text[:200]}..."
-            else:
-                error_msg = f"HTTP {response.status_code}: {response.text[:200]}..."
-                if attempt < max_retries - 1:
-                    st.warning(f"Attempt {attempt + 1} failed. Retrying in 2 seconds...")
-                    time.sleep(2)
-                    continue
-                return False, error_msg
-                
-        except requests.exceptions.Timeout:
-            error_msg = f"Request timed out (attempt {attempt + 1}/{max_retries})"
+                    return (
+                        (True, "OK")
+                        if "success" in resp.text.lower()
+                        else (False, resp.text[:200])
+                    )
             if attempt < max_retries - 1:
-                st.warning(f"Timeout on attempt {attempt + 1}. Retrying in 3 seconds...")
-                time.sleep(3)
-                continue
-            return False, "Request timed out after multiple attempts"
-            
-        except requests.exceptions.ConnectionError:
-            error_msg = f"Connection error (attempt {attempt + 1}/{max_retries})"
-            if attempt < max_retries - 1:
-                st.warning(f"Connection failed on attempt {attempt + 1}. Retrying in 3 seconds...")
-                time.sleep(3)
-                continue
-            return False, "Connection failed after multiple attempts"
-            
-        except requests.exceptions.RequestException as e:
-            error_msg = f"Network error: {str(e)}"
-            if attempt < max_retries - 1:
-                st.warning(f"Network error on attempt {attempt + 1}. Retrying...")
                 time.sleep(2)
-                continue
-            return False, error_msg
-            
+        except requests.exceptions.Timeout:
+            if attempt < max_retries - 1:
+                time.sleep(3)
         except Exception as e:
-            return False, f"Unexpected error: {str(e)}"
-    
+            return False, str(e)
     return False, "Max retries exceeded"
 
-def get_video_embed_url(drive_id):
-    return f"https://drive.google.com/file/d/{drive_id}/preview"
 
-# Initialize session state
-if 'feedback_data' not in st.session_state:
-    st.session_state.feedback_data = []
-if 'session_id' not in st.session_state:
-    st.session_state.session_id = str(uuid.uuid4())[:8]
-if 'current_video_index' not in st.session_state:
-    st.session_state.current_video_index = 0
-if 'videos' not in st.session_state:
-    st.session_state.videos = []
-if 'page' not in st.session_state:
-    st.session_state.page = 'intro'
-if 'prolific_id' not in st.session_state:
-    st.session_state.prolific_id = ''
-if 'consent_given' not in st.session_state:
-    st.session_state.consent_given = False
-if 'video_start_time' not in st.session_state:
-    st.session_state.video_start_time = None
-if 'submission_complete' not in st.session_state:
-    st.session_state.submission_complete = False
+def fetch_saved_progress(annotator_name):
+    """
+    GET rows already saved for this annotator from Google Sheets.
+    Your Apps Script GET handler should accept ?annotator=<name> and return:
+        {"rows": [{"display_num":1,"post_id":"...","label":"Safe",
+                   "reason":"...","time_spent_sec":12.3}, ...]}
+    Returns [] if the endpoint isn't configured or on any error.
+    """
+    if not GOOGLE_SHEET_READ_URL:
+        return []
+    try:
+        resp = requests.get(
+            GOOGLE_SHEET_READ_URL,
+            params={"annotator": annotator_name},
+            timeout=15,
+        )
+        if resp.status_code == 200:
+            return resp.json().get("rows", [])
+    except Exception:
+        pass
+    return []
+
+
+def autosave_pending(force=False):
+    """
+    Flush unsaved responses to Google Sheets.
+    - Called after every post; only actually sends when AUTOSAVE_EVERY pending rows
+      have accumulated, unless force=True (used on final submission).
+    - Updates st.session_state.saved_up_to on each successful row.
+    - Shows a toast notification when a batch is saved.
+    """
+    feedback = st.session_state.feedback_data
+    saved_up_to = st.session_state.saved_up_to
+    pending = [r for r in feedback if r["display_num"] > saved_up_to]
+
+    if not pending:
+        return True
+    if not force and len(pending) < AUTOSAVE_EVERY:
+        return True  # not enough accumulated yet
+
+    failed = []
+    for row in pending:
+        ok, _ = append_to_sheet(row)
+        if ok:
+            st.session_state.saved_up_to = max(
+                st.session_state.saved_up_to, row["display_num"]
+            )
+        else:
+            failed.append(row["display_num"])
+
+    if failed:
+        st.toast(
+            f"⚠️ Autosave failed for posts {failed}. Will retry next time.", icon="⚠️"
+        )
+        return False
+
+    st.toast(f"💾 Progress saved ({st.session_state.saved_up_to}/100 posts)", icon="💾")
+    return True
+
+
+# ── Pages ──────────────────────────────────────────────────────────────────────
+
 
 def intro_page():
-    """Introduction and consent page"""
-    # Research Study Header with Logo
-    st.markdown("""
-    <div style="text-align: center; padding: 15px 0;">
-        <div style="font-size: 3em; margin-bottom: 8px;">🎓</div>
-        <h1 style="color: #1f4e79; margin: 0; font-size: 2.2em;">Video Summary Feedback Study</h1>
-        <p style="color: #666; margin: 3px 0; font-size: 1em;">Max Planck Institute for Software Systems • Germany</p>
+    st.markdown(
+        """
+    <div style="text-align:center; padding:10px 0 24px;">
+        <div style="font-size:2.8em; margin-bottom:10px;">🔵</div>
+        <h1 style="color:#1e3a8a; margin:0; font-size:2em; font-weight:700;">Bluesky Content Moderation</h1>
+        <p style="color:#64748b; margin:6px 0 0;">Internal Team Labeling Study &nbsp;·&nbsp; Max Planck Institute for Software Systems</p>
     </div>
-    """, unsafe_allow_html=True)
-    
+    """,
+        unsafe_allow_html=True,
+    )
+
     st.markdown("---")
-    
-    st.markdown("""
-    ### Welcome to Our Research Study
+    st.markdown("### About this study")
+    st.markdown(
+        """
+You will review **100 Bluesky posts** and label each one as **Safe** or **Unsafe**
+according to Bluesky's Community Guidelines. For each post you must also provide
+a brief written reasoning.
 
-    Dear participant,
+> ⚠️ Some posts may contain offensive language, hate speech, or explicit content.
+> Please proceed only if you are comfortable.
+    """
+    )
 
-    This survey aims to understand the efficacy of multimodal language models in summarizing short-format videos. During the survey, you will be properly guided through different sections. We will record your responses given during the survey.
+    st.markdown("### Labeling guidelines")
+    st.markdown(
+        """
+<table class="cat-table">
+<tr><th style="width:22%">Category</th><th>Mark as <strong>Unsafe</strong> if the post…</th></tr>
+<tr><td class="cat-label">Violence &amp; Threats</td>
+    <td>Threatens death or serious harm; promotes, glorifies, or incites violence; shares graphic violent content to shock or intimidate.</td></tr>
+<tr><td class="cat-label">Hate Speech</td>
+    <td>Attacks or incites hatred based on protected characteristics (race, ethnicity, religion, gender identity, sexual orientation, disability, etc.). Includes slurs and dehumanizing comparisons.</td></tr>
+<tr><td class="cat-label">Adult Content</td>
+    <td>Explicit sexual content that is non-consensual, involves minors, or is unlabeled.</td></tr>
+<tr><td class="cat-label">Self-Harm</td>
+    <td>Promotes, instructs, or depicts self-harm, suicide, eating disorders, or extreme dieting.</td></tr>
+<tr><td class="cat-label">Harassment</td>
+    <td>Persistently targets or creates malicious content designed to humiliate or degrade individuals.</td></tr>
+<tr><td class="cat-label">Spam &amp; Deception</td>
+    <td>Spam, financial scams, phishing, artificial engagement manipulation, or impersonation.</td></tr>
+</table>
+    """,
+        unsafe_allow_html=True,
+    )
 
-    This study is being conducted by academic researchers from the Max Planck Institute for Software Systems, Germany. Your valuable opinion expressed in this survey may contribute to important research findings. We request you to read the instructions carefully and answer all questions thoughtfully.
+    st.markdown(
+        """
+**Safe** — does not fall into any category above. Includes everyday content, news, humor,
+strong language not targeting anyone, fictional violence in art/games, journalism, or labeled parody.
+    """
+    )
 
-    **Privacy & Data Protection:**
-    - Results may be published in research forums, but only in aggregate forms (averages, totals)
-    - No personal information will be published or shared
-    - All information will be protected to the greatest extent allowed by law
-    - Data will be kept secured during and after the survey
-
-    **Your Rights:**
-    - Participation is completely voluntary
-    - You may withdraw at any time without penalty
-    - Your responses will remain anonymous
-    - You can request data deletion by contacting the researchers
-    """)
-    
     st.markdown("---")
-    st.markdown("**Note:** All fields marked with * are mandatory.")
-    
-    # Compact layout for ID and consent
-    col1, col2 = st.columns([1, 1])
-    
-    with col1:
-        st.subheader("👤 Participant Information")
-        prolific_id = st.text_input("Prolific ID*", 
-                                   placeholder="Enter your Prolific ID",
-                                   help="Please enter your complete Prolific ID (typically 24 characters)")
-        
-        # Validate Prolific ID
-        prolific_id_valid = False
-        if prolific_id:
-            if len(prolific_id) < 10:
-                st.error("⚠️ Prolific ID seems too short. Please ensure you entered the complete ID.")
-            elif len(prolific_id) > 30:
-                st.error("⚠️ Prolific ID seems too long. Please check your entry.")
-            elif not prolific_id.replace('-', '').replace('_', '').isalnum():
-                st.error("⚠️ Prolific ID should contain only letters, numbers, hyphens, and underscores.")
-            else:
-                prolific_id_valid = True
-                st.success("✅ Prolific ID format looks correct.")
-    
-    with col2:
-        st.subheader("📋 Informed Consent")
-        
-        # Clear consent checkbox with better formatting
-        consent = st.checkbox(
-            label="**I provide my informed consent to participate***",
-            value=False,
-            help="Check this box to indicate your agreement to participate"
-        )
-        
-        if consent:
-            st.markdown("""
-            <div style="background-color: #e8f5e8; padding: 10px; border-radius: 5px; border-left: 4px solid #4CAF50; color: #2e7d32;">
-                <strong>✅ Consent Acknowledged</strong><br>
-                <span style="color: #2e7d32;">By checking this box, you confirm that you:</span>
-                <ul style="margin: 5px 0; color: #2e7d32;">
-                    <li>Have read and understood the study information</li>
-                    <li>Voluntarily agree to participate in this research</li>
-                    <li>Understand your participation is voluntary and anonymous</li>
-                    <li>Know you can withdraw at any time</li>
-                </ul>
-            </div>
-            """, unsafe_allow_html=True)
-    
-    # Enable button only when all conditions are met
-    can_proceed = prolific_id and prolific_id_valid and consent
-    
+    st.markdown("### Your information")
+
+    name = st.text_input("Your name or initials *", placeholder="e.g. Ines A.")
+    name = name.strip()
+    name_valid = len(name) >= 2
+
+    # Check for saved progress once per session when a valid name is typed
+    if name_valid and not st.session_state.resume_checked:
+        with st.spinner("Checking for saved progress..."):
+            rows = fetch_saved_progress(name)
+        st.session_state._saved_rows_cache = rows
+        st.session_state.resume_checked = True
+
+    saved_rows = st.session_state._saved_rows_cache if name_valid else []
+    resume_available = len(saved_rows) > 0
+    resume = False
+
+    if resume_available:
+        completed = len(saved_rows)
+        st.info(f"💾 Found saved progress: **{completed}/100 posts** already labeled.")
+        resume = st.checkbox(f"Resume from post {completed + 1}", value=True)
+
     st.markdown("---")
-    
-    if st.button("🚀 Begin Study", disabled=not can_proceed, type="primary", use_container_width=True):
-        if can_proceed:
-            st.session_state.prolific_id = prolific_id
-            st.session_state.consent_given = True
-            
-            # Load video data
-            video_list_file = "data/required_videos.txt"
-            videos = load_video_data(video_list_file)
-            
-            if videos:
-                # Randomize video order
-                random.shuffle(videos)
-                st.session_state.videos = videos
-                st.session_state.page = 'survey'
-                st.session_state.video_start_time = time.time()
-                st.rerun()
-            else:
-                st.error("No videos found. Please contact the researchers.")
+
+    btn_label = (
+        "Resume labeling →" if (resume_available and resume) else "Begin labeling →"
+    )
+    if st.button(
+        btn_label, type="primary", disabled=not name_valid, use_container_width=True
+    ):
+        posts = load_posts()
+        st.session_state.annotator_name = name
+        st.session_state.posts = posts
+
+        if resume_available and resume:
+            # Populate feedback_data from saved rows so autosave won't re-send them
+            st.session_state.feedback_data = [
+                {
+                    "annotator_name": name,
+                    "post_id": r.get("post_id", ""),
+                    "display_num": int(r.get("display_num", 0)),
+                    "label": r.get("label", ""),
+                    "reason": r.get("reason", ""),
+                    "time_spent_sec": float(r.get("time_spent_sec", 0)),
+                }
+                for r in saved_rows
+            ]
+            done = [r["display_num"] for r in st.session_state.feedback_data]
+            done_set = set(done)
+            st.session_state.saved_up_to = max(done)
+            st.session_state.current_idx = next(
+                (
+                    i
+                    for i, p in enumerate(posts)
+                    if p.get("display_num", i + 1) not in done_set
+                ),
+                len(posts),
+            )
+            st.session_state.resumed_from = len(saved_rows)
         else:
-            if not prolific_id:
-                st.error("⚠️ Please enter your Prolific ID.")
-            elif not prolific_id_valid:
-                st.error("⚠️ Please enter a valid Prolific ID.")
-            elif not consent:
-                st.error("⚠️ Please provide your informed consent to continue.")
+            st.session_state.feedback_data = []
+            st.session_state.saved_up_to = -1
+            st.session_state.current_idx = 0
+            st.session_state.resumed_from = None
+
+        st.session_state.post_start_time = time.time()
+        st.session_state.page = "survey"
+        st.rerun()
+
 
 def survey_page():
-    """Main survey page with video feedback"""
-    if not st.session_state.videos:
-        st.error("No videos loaded. Please restart the study.")
-        return
-    
-    current_idx = st.session_state.current_video_index
-    total_videos = len(st.session_state.videos)
-    
-    # Progress indicator
-    st.progress((current_idx + 1) / total_videos)
-    st.write(f"Video {current_idx + 1} of {total_videos}")
-    
-    # Prominent instructions at the top of the page
-    st.markdown("""
-    <div style="background-color: #e3f2fd; padding: 15px; border-radius: 10px; border-left: 5px solid #2196f3; margin-bottom: 20px;">
-        <h3 style="color: #1976d2; margin: 0 0 8px 0; font-size: 1.3em;">📋 Instructions</h3>
-        <p style="color: #424242; margin: 0; font-size: 1.1em; font-weight: 500;">
-            Your task is to evaluate the quality of the AI-generated summary on the right for the given short form video. Please follow these steps:
-            Watch the video → Read the AI summary → Rate the summary quality → Categorize the video content → Provide detailed feedback
-        </p>
+    posts = st.session_state.posts
+    idx = st.session_state.current_idx
+    total = len(posts)
+    post = posts[idx]
+
+    # One-time resume banner
+    if st.session_state.resumed_from:
+        n = st.session_state.resumed_from
+        st.success(f"Resumed from post {n + 1} — posts 1–{n} are already saved.")
+        st.session_state.resumed_from = None
+
+    # Progress bar
+    st.markdown(
+        f'<p class="progress-label">Post {idx + 1} of {total}</p>',
+        unsafe_allow_html=True,
+    )
+    st.progress((idx + 1) / total)
+    st.markdown("---")
+
+    # Post card
+    text = str(post.get("text", ""))
+    image_url = str(post.get("image_url", "")).strip()
+    has_image = post.get("has_image", "False") == "True" and image_url not in (
+        "",
+        "nan",
+    )
+
+    st.markdown(
+        f"""
+<div class="post-card">
+    <div style="margin-bottom:10px;">
+        <div class="post-avatar"></div>
+        <span style="font-size:12px;color:#94a3b8;vertical-align:middle;">@bluesky user</span>
     </div>
-    """, unsafe_allow_html=True)
-    
-    current_video = st.session_state.videos[current_idx]
-    
-    # Initialize video start time if not set
-    if st.session_state.video_start_time is None:
-        st.session_state.video_start_time = time.time()
-    
-    # Create layout: larger video area, smaller summary/feedback area
-    col1, col2 = st.columns([1.5, 2])
-    
-    with col1:
-        st.subheader(f"📹 Video {current_idx + 1}")
-        
-        # Video player with increased size
-        if current_video['drive_id']:
-            video_url = get_video_embed_url(current_video['drive_id'])
-            
-            video_html = f"""
-            <div style="border: 2px solid #ddd; border-radius: 10px; overflow: hidden;">
-                <iframe src="{video_url}" 
-                        width="100%" 
-                        height="500" 
-                        frameborder="0" 
-                        allowfullscreen="true"
-                        allow="accelerometer; autoplay; clipboard-write; encrypted-media; gyroscope; picture-in-picture">
-                </iframe>
-            </div>
-            """
-            st.components.v1.html(video_html, height=520)
-        else:
-            st.warning("Video not available")
-    
-    with col2:
-        st.subheader("🤖 Video Summary")
-        st.text_area("", value=current_video['summary'], height=200, disabled=True)
-        
-        # Feedback form
-        st.subheader("📝 Your Feedback")
-        st.markdown("**Note:** All fields marked with * are mandatory.")
-        
-        # Form fields outside of st.form for real-time validation
-        st.markdown("📊 **How do you rate the above-written summary of the video?***")
-        rating = st.radio(
-            "Overall quality rating",
-            options=[1, 2, 3, 4, 5],
-            format_func=lambda x: f"{x} - {['Very Poor', 'Poor', 'Fair', 'Good', 'Very Good'][x-1]}",
-            index=None,
-            horizontal=True,
-            label_visibility="collapsed",
-            key=f"rating_{current_idx}"
-        )
-        
-        # # Summary Accuracy
-        # st.markdown("🎯 **How accurate is the above-written summary of the video? Please feel free to rewatch the video if you need.***")
-        # accuracy = st.radio(
-        #     "Summary accuracy rating",
-        #     options=[1, 2, 3, 4, 5],
-        #     format_func=lambda x: f"{x} - {['Very Poor', 'Poor', 'Fair', 'Good', 'Very Good'][x-1]}",
-        #     index=None,
-        #     horizontal=True,
-        #     label_visibility="collapsed",
-        #     key=f"accuracy_{current_idx}"
-        # )
+    <div class="post-text">{text}</div>
+</div>
+    """,
+        unsafe_allow_html=True,
+    )
 
-        accuracy = None
-
-        # Video Category Selection
-        st.markdown("📂 **Video Category***:")
-        predicted_category = st.selectbox(
-            "What category best describes this video?",
-            options=[""] + CATEGORIES,
-            index=0,
-            help="Select the most appropriate category for this video content",
-            label_visibility="collapsed",
-            key=f"category_{current_idx}"
-        )
-        
-        # Detailed Feedback
-        comments = st.text_area(
-            "💬 **Detailed Feedback***:",
-            placeholder="Briefly explain your rating and summary accuracy scores you provided. What was accurate/inaccurate? What was missing?",
-            height=100,
-            help="This field is mandatory. Please explain your ratings.",
-            key=f"comments_{current_idx}"
-        )
-        
-        # Check if all required fields are filled
-        all_fields_filled = (
-            rating is not None and 
-            # accuracy is not None and 
-            predicted_category and predicted_category != ""
-            and comments.strip() != ""
-        )
-        
-        # Show validation messages in real-time
-        if not all_fields_filled:
-            missing_fields = []
-            if rating is None:
-                missing_fields.append("Overall rating")
-            if accuracy is None:
-                missing_fields.append("Summary accuracy")
-            if not predicted_category or predicted_category == "":
-                missing_fields.append("Video category")
-            if not comments.strip():
-                missing_fields.append("Detailed feedback")
-            
-            if missing_fields:
-                st.warning(f"⚠️ Please complete: {', '.join(missing_fields)}")
-        
-        # Determine button text and action based on video position
-        is_last_video = current_idx >= total_videos - 1
-        
-        if is_last_video:
-            button_text = "✅ Submit & Complete Study"
-            button_help = "Submit your feedback and complete the study"
+    if has_image:
+        img = show_image(image_url)
+        if img:
+            _, col, _ = st.columns([1, 3, 1])
+            with col:
+                st.image(img, use_container_width=True)
         else:
-            button_text = "➡️ Next Video"
-            button_help = f"Continue to video {current_idx + 2} of {total_videos}"
-        
-        # Action button
-        if st.button(
-            button_text,
-            type="primary" if all_fields_filled else "secondary",
-            disabled=not all_fields_filled,
-            help=button_help,
-            use_container_width=True,
-            key=f"submit_btn_{current_idx}"
-        ):
-            if all_fields_filled:
-                # Calculate time spent on this video
-                time_spent = time.time() - st.session_state.video_start_time if st.session_state.video_start_time else 0
-                
-                # Prepare feedback data with consistent ordering
-                feedback_data = {
-                    'timestamp': datetime.now().strftime("%Y-%m-%d %H:%M:%S"),
-                    'prolific_id': st.session_state.prolific_id,
-                    'session_id': st.session_state.session_id,
-                    'video_name': current_video['name'],
-                    'rating': rating,
-                    'accuracy': accuracy,
-                    'predicted_category': predicted_category,
-                    'true_category': current_video['true_category'],
-                    'comments': comments,
-                    'llm_model': LLM_MODEL,
-                    'time_spent': round(time_spent, 2)
-                }
-                
-                # Add to session state
-                st.session_state.feedback_data.append(feedback_data)
-                
-                # Move to next video or finish
-                if is_last_video:
-                    # This is the last video, proceed to submit all data
-                    submit_all_data()
-                else:
-                    # Move to next video
-                    st.session_state.current_video_index += 1
-                    st.session_state.video_start_time = time.time()  # Reset timer for next video
-                    st.rerun()
+            st.caption("(Image could not be loaded)")
 
-def submit_all_data():
-    """Submit all collected data to Google Sheets"""
-    if not st.session_state.feedback_data:
-        st.error("No data to submit")
-        return
-    
-    success_count = 0
-    total_count = len(st.session_state.feedback_data)
-    
-    # Show submission progress
-    st.subheader("📤 Submitting Your Responses...")
-    progress_bar = st.progress(0)
-    status_text = st.empty()
-    
-    for i, feedback in enumerate(st.session_state.feedback_data):
-        status_text.text(f"Submitting response {i+1}/{total_count}...")
-        progress_bar.progress((i + 1) / total_count)
-        
-        success, message = append_to_public_sheet(feedback)
-        if success:
-            success_count += 1
+    st.markdown("---")
+
+    label = st.radio(
+        "**Is this post safe or unsafe?** *",
+        options=["Safe", "Unsafe"],
+        index=None,
+        horizontal=True,
+        key=f"label_{idx}",
+    )
+    reason = st.text_area(
+        "**Briefly explain your reasoning:** *",
+        key=f"reason_{idx}",
+        placeholder="Why did you choose Safe or Unsafe?",
+        height=100,
+    )
+
+    all_filled = label is not None and reason.strip() != ""
+    if not all_filled:
+        missing = []
+        if label is None:
+            missing.append("Safe/Unsafe selection")
+        if not reason.strip():
+            missing.append("reasoning")
+        st.warning(f"Please complete: {', '.join(missing)}")
+
+    is_last = idx >= total - 1
+    btn_label = (
+        "Submit all responses ✓" if is_last else f"Next post → ({idx + 2} of {total})"
+    )
+
+    if st.button(
+        btn_label,
+        type="primary",
+        disabled=not all_filled,
+        use_container_width=True,
+        key=f"btn_{idx}",
+    ):
+
+        time_spent = time.time() - (st.session_state.post_start_time or time.time())
+        st.session_state.feedback_data.append(
+            {
+                "annotator_name": st.session_state.annotator_name,
+                "post_id": post.get("post_id", ""),
+                "display_num": post.get("display_num", idx + 1),
+                "label": label,
+                "reason": reason.strip(),
+                "time_spent_sec": round(time_spent, 1),
+            }
+        )
+
+        if is_last:
+            # Force-flush all remaining unsaved rows
+            ok = autosave_pending(force=True)
+            st.session_state.submission_complete = ok
+            st.session_state.page = "summary"
+            st.rerun()
         else:
-            st.error(f"Failed to submit response {i+1}: {message}")
-        
-        time.sleep(0.5)  # Small delay between submissions
-    
-    # Update submission status
-    if success_count == total_count:
-        st.session_state.submission_complete = True
-        st.success(f"✅ Successfully submitted all {success_count} responses!")
-        st.balloons()
-    elif success_count > 0:
-        st.warning(f"⚠️ Submitted {success_count}/{total_count} responses. Some may have failed.")
-        st.session_state.submission_complete = True
-    else:
-        st.error("❌ Failed to submit responses. Please contact the researchers.")
-        st.session_state.submission_complete = False
-    
-    # Move to summary page
-    st.session_state.page = 'summary'
-    time.sleep(2)  # Brief pause before redirect
-    st.rerun()
+            # Regular autosave — only sends when 10 new rows have accumulated
+            autosave_pending(force=False)
+            st.session_state.current_idx += 1
+            st.session_state.post_start_time = time.time()
+            st.rerun()
+
 
 def summary_page():
-    """Final summary page"""
-    st.markdown("""
-    <div style="text-align: center; padding: 20px 0;">
-        <div style="font-size: 4em; margin-bottom: 10px;">🎉</div>
-        <h1 style="color: #1f4e79; margin: 0;">Study Complete!</h1>
-        <p style="color: #666; font-size: 1.2em;">Thank you for your participation in the Video Summary Feedback Study</p>
-    </div>
-    """, unsafe_allow_html=True)
-    
-    # Show submission status
+    st.markdown(
+        """
+<div style="text-align:center; padding:40px 0 24px;">
+    <div style="font-size:3em; margin-bottom:12px;">🎉</div>
+    <h1 style="color:#1e3a8a; margin:0; font-weight:700;">All done!</h1>
+    <p style="color:#64748b; margin:8px 0 0;">Thank you for contributing to the Bluesky moderation study.</p>
+</div>
+    """,
+        unsafe_allow_html=True,
+    )
+
     if st.session_state.submission_complete:
-        st.success("✅ Your responses have been successfully submitted!")
-        if st.session_state.feedback_data:
-            st.markdown("### ✅ Next Steps")
-            st.success(
-                f"""
-                Thank you for your responses!  
-                To complete the survey, please enter the following code on the Prolific website:
-
-                **{PROLIFIC_COMPLETION_CODE}**
-                """
-            )
-
-            # Show summary of responses
-            st.subheader("📊 Response Summary")
-            df = pd.DataFrame(st.session_state.feedback_data)
-
-            # Key stats
-            col1, col2, col3 = st.columns(3)
-            with col1:
-                st.metric("Videos Reviewed", len(df))
-            with col2:
-                avg_rating = df['rating'].mean()
-                st.metric("Avg. Rating", f"{avg_rating:.1f}/5")
-            with col3:
-                total_time = df['time_spent'].sum()
-                st.metric("Time Spent", f"{total_time:.0f}s")
-
-            st.markdown("---")
-            
-
-            # Optional details
-            with st.expander("📋 View All Responses"):
-                display_df = df[['video_name', 'rating', 'accuracy', 'predicted_category', 'comments']]
-                st.dataframe(display_df, use_container_width=True)
-
-            # Backup option
-            csv = df.to_csv(index=False)
-            st.download_button(
-                "📥 Download Responses",
-                data=csv,
-                file_name=f"feedback_backup_{st.session_state.prolific_id}_{datetime.now().strftime('%Y%m%d_%H%M%S')}.csv",
-                mime="text/csv"
-            )
+        st.success(
+            f"All {len(st.session_state.feedback_data)} responses saved successfully."
+        )
     else:
-        st.error("❌ There were issues submitting some responses.")
-    
-    
+        st.warning(
+            "Some responses may not have saved correctly. Please contact the research team."
+        )
 
-    
-    
-    
-    # # Optional: Reset study button for testing
-    # if st.button("🔄 Start New Study Session", help="For testing purposes only"):
-    #     # Reset all session state
-    #     for key in list(st.session_state.keys()):
-    #         del st.session_state[key]
-    #     st.rerun()
+    st.markdown("---")
+    st.markdown(f"**Annotator:** {st.session_state.annotator_name}")
+    st.markdown(f"**Posts labeled:** {len(st.session_state.feedback_data)}")
+
+
+# ── Router ─────────────────────────────────────────────────────────────────────
+
 
 def main():
-    """Main application logic"""
-    
-    # Route to appropriate page
-    if st.session_state.page == 'intro':
+    page = st.session_state.page
+    if page == "intro":
         intro_page()
-    elif st.session_state.page == 'survey':
+    elif page == "survey":
         survey_page()
-    elif st.session_state.page == 'summary':
+    elif page == "summary":
         summary_page()
     else:
         intro_page()
+
 
 if __name__ == "__main__":
     main()
